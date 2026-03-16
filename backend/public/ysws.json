@@ -1,0 +1,86 @@
+[
+  {
+    "name": "Sidequest",
+    "form": "https://forms.fillout.com/t/2mPyJMeipNus",
+    "channel": "C0ALKC7QC30",
+    "description": "YS\nA real project for a real person, portfolio site, Discord bot, game, tool, anything. You build it.\nWS\nCoins to spend in a shop full of rewards. The more you build, the further you go.",
+    "website": "https://side-quest-vert.vercel.app"
+  },
+  {
+    "name": "Puzzle",
+    "form": "https://puzzle.fillout.com/rsvp",
+    "channel": "C0AHCQU06DR",
+    "description": "YS: A website or app with puzzles such as Sudoku, crosswords, other popular puzzle formats, or your own original idea.\nWS: Real-life puzzles and brainteasers, plus server credits to host your websites, a Raspberry Pi for self-hosting, and even a 3D printer to make your own puzzles.",
+    "website": ""
+  },
+  {
+    "name": "Joker",
+    "form": "https://gamerwaves.fillout.com/rsvp",
+    "channel": "C09DZ73HPB8",
+    "description": "YS: Something Digital Related to Cards WS: Github Playing Cards",
+    "website": ""
+  },
+  {
+    "name": "Hackint",
+    "form": "https://forms.fillout.com/t/e5PqDYSa6aus",
+    "channel": "C0AFTCU2V0B",
+    "description": "",
+    "website": ""
+  },
+  {
+    "name": "Kernel",
+    "form": "https://forms.fillout.com/t/73ZHf2FNr4us",
+    "channel": "C0AELHAMYSK",
+    "description": "Create your own developer tool using the build-your-own-x repo on GitHub for project ideas! and get rewards ranging from software subscriptions to hardware and other dev goodies",
+    "website": ""
+  },
+  {
+    "name": "Glide",
+    "form": "https://forms.fillout.com/t/3jEZEKPCXSus",
+    "channel": "C09F02LQD8B",
+    "description": "you ship: an app related to clicking/mice (game, cps test, whatever) we ship: a mouse based on the hours",
+    "website": ""
+  },
+  {
+    "name": "Jumpscare",
+    "form": "https://forms.fillout.com/t/1in2qX6mdnus",
+    "channel": "C0ACNTVSPCY",
+    "description": "YS: A horror game\n\nWS: Stickers, patches, scary themed merch, Raspberry Pis, drawing tablets and even Framework 12.",
+    "website": ""
+  },
+  {
+    "name": "Commit",
+    "form": "https://atomtables.fillout.com/t/cEgp6ZqE6qus",
+    "channel": "C0AE4S0S2CR",
+    "description": "In this YSWS, you commit and make PRs on community projects. Every completed PR can earn you points in the shop.",
+    "website": "https://commit.atomtables.dev"
+  },
+  {
+    "name": "Jus'STUDY",
+    "form": "https://forms.fillout.com/t/aX86bHVxqkus",
+    "channel": "C0A79Q9F5NZ",
+    "description": "YS: Build cool projects based on weekly challenges, including both hardware and software. WS: A grant to help you build your own PC.",
+    "website": ""
+  },
+  {
+    "name": "Kit-Lab",
+    "form": "https://forms.fillout.com/t/fLiru2jQ2Eus",
+    "channel": "C0AAM3UH8KC",
+    "description": "build software, get hardware",
+    "website": "https://kit-lab.vercel.app"
+  },
+  {
+    "name": "Fanout",
+    "form": "https://forms.fillout.com/t/ujrooiJM2Fus",
+    "channel": "C0AKN76CGQN",
+    "description": "Build real-time or collaborative apps with Fanout guidance and win electronic gadgets.",
+    "website": ""
+  },
+  {
+    "name": "Hackanomous",
+    "form": "https://forms.fillout.com/t/4oPTMjqFuaus",
+    "channel": "C0AHPG4LPUM",
+    "description": "Build AI or ML related hardware or software; get funding or prizes!",
+    "website": ""
+  }
+]

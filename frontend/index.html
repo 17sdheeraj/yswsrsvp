@@ -1,0 +1,1594 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+    <title>YSWS RSVP</title>
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://hackclub.com/stickers/epoch_h.png"
+    />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --hc-red: #ec3750;
+        --hc-orange: #ff8c37;
+        --hc-yellow: #f1c40f;
+        --hc-green: #33d6a6;
+        --hc-cyan: #5bc0de;
+        --hc-blue: #338eda;
+        --hc-purple: #a633d6;
+        --hc-muted: #8492a6;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          Inter,
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          sans-serif;
+        background:
+          radial-gradient(
+            1200px 500px at 0% -20%,
+            #1d4ed855 0%,
+            transparent 70%
+          ),
+          radial-gradient(
+            900px 500px at 100% 120%,
+            #7c3aed44 0%,
+            transparent 70%
+          ),
+          linear-gradient(145deg, #020617, #0f172a 50%, #111827 100%);
+        color: white;
+        display: flex;
+        justify-content: center;
+        padding: 32px 20px 48px;
+        min-height: 100vh;
+      }
+
+      .container {
+        width: 100%;
+        max-width: 1150px;
+      }
+
+      .hero {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        padding: 20px 0 26px;
+      }
+
+      h1 {
+        font-size: clamp(30px, 4vw, 48px);
+        margin: 0;
+        letter-spacing: -0.03em;
+      }
+
+      .subtitle {
+        opacity: 0.78;
+        margin: 8px 0 0;
+        line-height: 1.5;
+        max-width: 620px;
+      }
+
+      input {
+        padding: 14px 14px;
+        border-radius: 12px;
+        border: 1px solid #334155;
+        background: #0f172a;
+        color: white;
+        width: min(100%, 360px);
+        font-size: 14px;
+        outline: none;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+      }
+
+      input:focus {
+        border-color: #38bdf8;
+        box-shadow: 0 0 0 4px #0ea5e933;
+      }
+
+      button,
+      .button-link {
+        border: 0;
+        padding: 11px 16px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--hc-red), var(--hc-orange));
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+        transition:
+          0.2s transform,
+          0.2s filter,
+          0.2s opacity;
+        box-shadow: 0 6px 20px #ec375044;
+        text-decoration: none;
+        font-size: 14px;
+      }
+
+      button:hover,
+      .button-link:hover {
+        transform: translateY(-1px);
+        filter: brightness(1.04);
+      }
+
+      button:active,
+      .button-link:active {
+        transform: translateY(0);
+      }
+
+      button:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      button.joined,
+      .button-link.joined {
+        background: #1f2937;
+        color: #cbd5e1;
+        border: 1px solid #334155;
+        box-shadow: none;
+      }
+
+      button.joined:not(:disabled),
+      .button-link.joined:hover {
+        cursor: pointer;
+      }
+
+      button.joined:not(:disabled):hover,
+      .button-link.joined:hover {
+        background: #273449;
+        border-color: #64748b;
+        color: #f1f5f9;
+      }
+
+      button.joined:disabled {
+        color: #94a3b8;
+        cursor: not-allowed;
+        opacity: 0.75;
+      }
+
+      button.description-btn {
+        color: #e2e8f0;
+        border-color: #475569;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 18px;
+      }
+
+      .card {
+        background: linear-gradient(180deg, #1e293bcc, #1e293b99);
+        backdrop-filter: blur(4px);
+        border: 1px solid #334155;
+        padding: 20px;
+        border-radius: 16px;
+        transition:
+          0.2s transform,
+          0.2s border-color,
+          0.2s background;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-height: 220px;
+      }
+
+      .card:hover {
+        transform: translateY(-3px);
+        border-color: #475569;
+        background: linear-gradient(180deg, #26364bcc, #1f2f43b8);
+      }
+
+      .card h3 {
+        margin: 0;
+        font-size: 20px;
+        letter-spacing: -0.01em;
+      }
+
+      .user {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0;
+      }
+
+      .user-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .user-meta h2 {
+        margin: 0;
+      }
+
+      .slack-id-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 2px;
+      }
+
+      .verification-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+      }
+
+      .verification-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        border-radius: 10px;
+        border: 1px solid #475569;
+        background: #0f172a;
+        color: #cbd5e1;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .verification-pill.verified {
+        border-color: #1d4ed8;
+        background: #0b1220;
+        color: #dbeafe;
+      }
+
+      .verification-pill.not-verified {
+        border-color: #7c2d12;
+        background: #0b1220;
+        color: #fed7aa;
+      }
+
+      .verification-pill.unknown {
+        border-color: #475569;
+        background: #111827;
+        color: #cbd5e1;
+      }
+
+      .verification-detail {
+        color: #94a3b8;
+        font-size: 12px;
+      }
+
+      .slack-id-text {
+        font-size: 12px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: #0b1220;
+        border: 1px solid #334155;
+        color: #cbd5e1;
+      }
+
+      .tap-copy {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        font-size: 12px;
+        line-height: 1.2;
+        min-height: 30px;
+        min-width: auto;
+        border: 1px solid #334155;
+        background: #0b1220;
+        color: #cbd5e1;
+        box-shadow: none;
+        font-weight: 600;
+        cursor: pointer;
+        transition:
+          0.15s transform,
+          0.15s filter,
+          0.15s border-color;
+      }
+
+      .tap-copy:hover {
+        transform: translateY(-1px);
+        filter: brightness(1.06);
+        border-color: var(--hc-cyan);
+      }
+
+      .tap-copy strong {
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+        font-size: 12px;
+        letter-spacing: 0.02em;
+      }
+
+      .copy-hint {
+        font-size: 12px;
+        opacity: 0.75;
+        margin: 2px 0 0;
+      }
+
+      .avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+      }
+
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.75);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        z-index: 50;
+      }
+
+      .modal.show {
+        display: flex;
+      }
+
+      .modal-box {
+        width: min(100%, 420px);
+        background: linear-gradient(180deg, #0f172a, #111827);
+        border: 1px solid #334155;
+        padding: 30px;
+        border-radius: 16px;
+        text-align: center;
+        box-shadow: 0 20px 50px #00000088;
+      }
+
+      .modal-actions {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+      }
+
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 4px solid #334155;
+        border-top: 4px solid #38bdf8;
+        animation: spin 1s linear infinite;
+        margin: auto;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .loading {
+        text-align: center;
+        margin-top: 40px;
+        opacity: 0.8;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 12px;
+        background: linear-gradient(135deg, var(--hc-green), var(--hc-cyan));
+        color: #052e16;
+        font-weight: 600;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 12px;
+        border-radius: 999px;
+        font-size: 13px;
+        background: #0f172a;
+        border: 1px solid #3d5a7e;
+        color: #cbd5e1;
+      }
+
+      .section {
+        background: linear-gradient(180deg, #111827aa, #0f172aaa);
+        border: 1px solid #334155;
+        border-radius: 18px;
+        padding: 20px;
+        box-shadow: 0 10px 35px #00000044;
+      }
+
+      .auth-shell {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 18px;
+        align-items: stretch;
+      }
+
+      .auth-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        justify-content: center;
+        min-height: 320px;
+      }
+
+      .auth-title {
+        font-size: clamp(28px, 3.5vw, 42px);
+        font-weight: 800;
+        line-height: 1.05;
+        letter-spacing: -0.04em;
+        margin: 0;
+      }
+
+      .auth-copy {
+        font-size: 15px;
+        line-height: 1.65;
+        color: #cbd5e1;
+        max-width: 560px;
+        margin: 0;
+      }
+
+      .slack-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        min-width: 220px;
+        text-decoration: none;
+      }
+
+      .slack-mark {
+        display: grid;
+        grid-template-columns: repeat(2, 8px);
+        grid-template-rows: repeat(2, 8px);
+        gap: 4px;
+      }
+
+      .slack-mark span {
+        display: block;
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+      }
+
+      .auth-card {
+        background: linear-gradient(180deg, #0b1220, #131d31);
+        border: 1px solid #334155;
+        border-radius: 20px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 14px;
+      }
+
+      .feature-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .support-box {
+        display: none;
+        margin-top: 14px;
+        padding: 14px;
+        border-radius: 16px;
+        background: linear-gradient(180deg, #2a0f12, #1f172a);
+        border: 1px solid #7f1d1d;
+      }
+
+      .support-box.show {
+        display: block;
+      }
+
+      .support-box textarea {
+        width: 100%;
+        min-height: 130px;
+        margin-top: 10px;
+        padding: 12px;
+        border-radius: 12px;
+        border: 1px solid #475569;
+        background: #020617;
+        color: #e2e8f0;
+        resize: vertical;
+        font:
+          12px/1.5 ui-monospace,
+          SFMono-Regular,
+          Consolas,
+          monospace;
+      }
+
+      .support-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+        flex-wrap: wrap;
+      }
+
+      .footer {
+        margin-top: 28px;
+        padding: 18px 20px;
+        border: 1px solid #3d5a7e;
+        border-radius: 18px;
+        background: linear-gradient(
+          120deg,
+          #0b1220b8,
+          #111827b8 42%,
+          #2a1020b8
+        );
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .footer-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .hc-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        box-shadow: 0 6px 18px #00000055;
+        border: 1px solid #ffffff22;
+        background: #0b1220b8;
+      }
+
+      .footer-copy {
+        margin: 0;
+        font-size: 14px;
+        color: #cbd5e1;
+      }
+
+      .footer-disclaimer {
+        margin: 0;
+        font-size: 13px;
+        color: var(--hc-muted);
+      }
+
+      .footer-note {
+        margin: 0;
+        font-size: 13px;
+        color: #dbeafe;
+        max-width: 560px;
+      }
+
+      .feature-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px;
+        background: #0f172a;
+        border: 1px solid #1e293b;
+        border-radius: 14px;
+      }
+
+      .feature-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, var(--hc-blue), var(--hc-purple));
+        margin-top: 5px;
+        flex: none;
+      }
+
+      .actions {
+        display: flex;
+        gap: 10px;
+        margin-top: auto;
+        flex-wrap: wrap;
+      }
+
+      .actions button {
+        flex: 1 1 140px;
+      }
+
+      .modal-desc {
+        margin: 8px 0 0;
+        text-align: left;
+        line-height: 1.6;
+        color: #cbd5e1;
+        font-size: 14px;
+        white-space: pre-wrap;
+      }
+
+      .modal-program-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 16px;
+      }
+
+      .muted {
+        opacity: 0.75;
+        font-size: 14px;
+        line-height: 1.5;
+        margin: 0;
+      }
+
+      .top-bar {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: center;
+        margin: 8px 0 18px;
+        flex-wrap: wrap;
+      }
+
+      .dashboard {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 14px;
+        margin: 0 0 18px;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .stat {
+        background: #0b1220;
+        border: 1px solid #334155;
+        border-radius: 14px;
+        padding: 12px;
+      }
+
+      .stat-label {
+        font-size: 12px;
+        opacity: 0.72;
+        margin: 0 0 6px;
+      }
+
+      .stat-value {
+        font-size: 24px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin: 0;
+      }
+
+      .progress-wrap {
+        background: #0b1220;
+        border: 1px solid #334155;
+        border-radius: 14px;
+        padding: 12px;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 10px;
+        border-radius: 999px;
+        background: #1e293b;
+        overflow: hidden;
+        margin-top: 10px;
+      }
+
+      .progress-fill {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, var(--hc-blue), var(--hc-green));
+        transition: width 0.25s ease;
+      }
+
+      .filters {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-content: flex-start;
+        background: #0b1220;
+        border: 1px solid #334155;
+        border-radius: 14px;
+        padding: 10px;
+      }
+
+      .chip {
+        border: 1px solid #334155;
+        background: #0f172a;
+        color: #cbd5e1;
+        padding: 8px 11px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: none;
+      }
+
+      .chip.active {
+        background: linear-gradient(135deg, #22d3ee, #38bdf8);
+        color: #00111f;
+        border-color: transparent;
+      }
+
+      .card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .channel-id {
+        font-size: 11px;
+        opacity: 0.62;
+        letter-spacing: 0.06em;
+      }
+
+      .status {
+        font-size: 14px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid #334155;
+        background: #0b1220;
+        display: none;
+      }
+
+      .status.error {
+        display: block;
+        border-color: #ef4444aa;
+        background: #450a0a66;
+        color: #fecaca;
+      }
+
+      .status.success {
+        display: block;
+        border-color: #22c55eaa;
+        background: #052e1666;
+        color: #bbf7d0;
+      }
+
+      .step1-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .step1-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      a {
+        color: var(--hc-cyan);
+      }
+
+      .tiny {
+        font-size: 12px;
+        opacity: 0.72;
+        margin: 0;
+      }
+
+      @media (max-width: 700px) {
+        body {
+          padding: 22px 14px 32px;
+        }
+
+        .auth-shell {
+          grid-template-columns: 1fr;
+        }
+
+        .dashboard {
+          grid-template-columns: 1fr;
+        }
+
+        .stats-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .section {
+          padding: 16px;
+        }
+
+        .hero {
+          padding: 10px 0 18px;
+        }
+
+        .footer {
+          padding: 16px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="hero">
+        <div>
+          <h1>YSWS RSVP</h1>
+          <div class="subtitle">
+            Join RSVP channels automatically and submit each YSWS RSVP from one
+            place!
+          </div>
+        </div>
+      </div>
+
+      <div id="step1" class="section">
+        <div class="auth-shell">
+          <div class="auth-panel">
+            <p class="pill" style="width: max-content">Secure HC sign-in</p>
+
+            <h2 class="auth-title">Login with HC Auth to continue</h2>
+
+            <p class="auth-copy">
+              Sign in once with HC Auth. We load your profile, check channel
+              membership, and let you join missing channels.
+            </p>
+
+            <div>
+              <a id="loginBtn" class="slack-button button-link" href="#">
+                <span class="slack-mark" aria-hidden="true">
+                  <span style="background: #e01e5a"></span>
+                  <span style="background: #36c5f0"></span>
+                  <span style="background: #2eb67d"></span>
+                  <span style="background: #ecb22e"></span>
+                </span>
+                Continue with HC Auth
+              </a>
+            </div>
+
+            <div id="statusBox" class="status"></div>
+
+            <div id="supportBox" class="support-box">
+              <p class="muted" style="margin: 0">
+                If you see this, copy and paste the following error details to
+                <a
+                  target="_blank"
+                  rel="noreferrer"
+                  href="https://hackclub.enterprise.slack.com/team/U0828RTU7FE"
+                  >Dheeraj S</a
+                >.
+              </p>
+              <textarea id="supportMessage" readonly></textarea>
+              <div class="support-actions">
+                <button type="button" onclick="copySupportMessage()">
+                  Copy error details
+                </button>
+                <a
+                  class="slack-button button-link joined"
+                  target="_blank"
+                  rel="noreferrer"
+                  href="https://hackclub.enterprise.slack.com/team/U0828RTU7FE"
+                  >Open Dheeraj S</a
+                >
+              </div>
+            </div>
+          </div>
+
+          <div class="auth-card">
+            <div>
+              <p class="stat-label" style="margin: 0 0 10px">What you get</p>
+              <div class="feature-list">
+                <div class="feature-item">
+                  <span class="feature-dot"></span>
+                  <div>
+                    <strong>Automatic identity</strong>
+                    <p class="tiny" style="margin-top: 4px">
+                      No need to enter your Slack user ID manually.
+                    </p>
+                  </div>
+                </div>
+                <div class="feature-item">
+                  <span class="feature-dot"></span>
+                  <div>
+                    <strong>Live membership checks</strong>
+                    <p class="tiny" style="margin-top: 4px">
+                      See exactly which YSWS channels you already joined.
+                    </p>
+                  </div>
+                </div>
+                <div class="feature-item">
+                  <span class="feature-dot"></span>
+                  <div>
+                    <strong>Fast channel access</strong>
+                    <p class="tiny" style="margin-top: 4px">
+                      Join missing channels and open RSVP forms from one place.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <p class="tiny">
+              Uses HC OAuth scopes: <strong>openid</strong>,
+              <strong>profile</strong>, <strong>email</strong>,
+              <strong>name</strong>, and <strong>slack_id</strong>.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div id="loading" class="loading" style="display: none">
+        <div class="spinner"></div>
+
+        <p>Checking channel memberships...</p>
+      </div>
+
+      <div id="programModal" class="modal" onclick="closeYswsModal(event)">
+        <div class="modal-box" onclick="event.stopPropagation()">
+          <h2 id="programModalTitle" style="margin: 0"></h2>
+          <p id="programModalDesc" class="modal-desc"></p>
+          <div class="modal-program-actions">
+            <button id="programWebsiteBtn" type="button" style="display: none">
+              Website
+            </button>
+            <button class="joined" type="button" onclick="closeYswsModal()">
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="step2" class="section" style="display: none">
+        <div class="top-bar">
+          <div class="user">
+            <img id="avatar" class="avatar" alt="avatar" />
+
+            <div class="user-meta">
+              <h2 id="hello"></h2>
+              <div class="slack-id-row">
+                <button
+                  class="slack-id-text tap-copy"
+                  type="button"
+                  onclick="copySlackId()"
+                >
+                  Slack ID: <strong id="slackIdText">—</strong>
+                </button>
+                <button
+                  id="usernameCopyBtn"
+                  class="slack-id-text tap-copy"
+                  type="button"
+                  style="display: none"
+                  onclick="copyUsername()"
+                >
+                  Username: <strong id="usernameText">—</strong>
+                </button>
+                <button
+                  id="emailCopyBtn"
+                  class="slack-id-text tap-copy"
+                  type="button"
+                  style="display: none"
+                  onclick="copyEmail()"
+                >
+                  Email: <strong id="emailText">—</strong>
+                </button>
+              </div>
+              <div class="verification-row">
+                <span id="verificationBadge" class="verification-pill unknown"
+                  >Verification unknown</span
+                >
+                <span id="verificationDetail" class="verification-detail"
+                  >Status: unavailable</span
+                >
+                <span id="eligibilityDetail" class="verification-detail"
+                  >YSWS eligibility: unknown</span
+                >
+              </div>
+              <p class="copy-hint">
+                Click Slack ID, username, or email to copy it.
+              </p>
+            </div>
+          </div>
+
+          <a id="logoutBtn" class="button-link joined" href="#"
+            >Change account</a
+          >
+        </div>
+
+        <p class="muted" style="margin: 0 0 18px">
+          First join the Slack channel, then fill the RSVP form.
+        </p>
+
+        <div class="dashboard">
+          <div>
+            <div class="stats-grid">
+              <div class="stat">
+                <p class="stat-label">Joined channels</p>
+                <p id="joinedCount" class="stat-value">0</p>
+              </div>
+              <div class="stat">
+                <p class="stat-label">Remaining</p>
+                <p id="remainingCount" class="stat-value">0</p>
+              </div>
+              <div class="stat">
+                <p class="stat-label">Total YSWSes</p>
+                <p id="totalCount" class="stat-value">0</p>
+              </div>
+            </div>
+
+            <div class="progress-wrap" style="margin-top: 10px">
+              <p class="stat-label" style="margin: 0">Completion</p>
+              <div class="progress-bar">
+                <div id="progressFill" class="progress-fill"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="filters">
+            <button
+              id="filterAll"
+              class="chip active"
+              onclick="setFilter('all')"
+            >
+              All
+            </button>
+            <button id="filterTodo" class="chip" onclick="setFilter('todo')">
+              Need to join
+            </button>
+            <button
+              id="filterJoined"
+              class="chip"
+              onclick="setFilter('joined')"
+            >
+              Joined
+            </button>
+          </div>
+        </div>
+
+        <div id="programs" class="grid"></div>
+      </div>
+
+      <footer class="footer">
+        <div class="footer-brand">
+          <img
+            class="hc-icon"
+            src="https://user-cdn.hackclub-assets.com/019cf11f-eade-7304-ab15-71833ccc4c32/icon-rounded.svg"
+            alt="Hack Club icon"
+          />
+          <div>
+            <p class="footer-copy">
+              Made by
+              <a
+                target="_blank"
+                rel="noreferrer"
+                href="https://hackclub.com/slack/?id=U0828RTU7FE"
+                >Dheeraj S</a
+              >
+            </p>
+            <p class="footer-disclaimer">Not an official HC app.</p>
+          </div>
+        </div>
+        <p class="footer-note">
+          Are you an organizer for a YSWS?
+          <a
+            target="_blank"
+            rel="noreferrer"
+            href="https://hackclub.com/slack/?id=U0828RTU7FE"
+            >DM me</a
+          >
+          to get your YSWS added to this list!
+        </p>
+      </footer>
+    </div>
+
+    <script>
+      const API_BASE =
+        window.__API_BASE__ || "https://ysws-rsvp-hca.sdheeraj.workers.dev";
+      const DEFAULT_AVATAR =
+        "https://user-cdn.hackclub-assets.com/019cf11f-eade-7304-ab15-71833ccc4c32/icon-rounded.svg";
+      const MEMBERSHIP_LOAD_ERROR =
+        "Unable to load your memberships right now. Please try again.";
+
+      let yswsList = [];
+      let latestMembership = {};
+      let currentFilter = "all";
+      let currentSlackId = "";
+      let currentUsername = "";
+      let currentEmail = "";
+
+      const statusBox = document.getElementById("statusBox");
+      const supportBox = document.getElementById("supportBox");
+      const supportMessage = document.getElementById("supportMessage");
+      const usernameCopyBtn = document.getElementById("usernameCopyBtn");
+      const emailCopyBtn = document.getElementById("emailCopyBtn");
+      const yswsModal = document.getElementById("programModal");
+      const yswsModalTitle = document.getElementById("programModalTitle");
+      const yswsModalDesc = document.getElementById("programModalDesc");
+      const yswsWebsiteBtn = document.getElementById("programWebsiteBtn");
+
+      function api(path) {
+        return `${API_BASE}${path}`;
+      }
+
+      async function apiGet(path) {
+        return fetch(api(path), {
+          credentials: "include",
+        });
+      }
+
+      async function apiPost(path, body) {
+        return fetch(api(path), {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+      }
+
+      function setView(view) {
+        const loading = document.getElementById("loading");
+        const step1 = document.getElementById("step1");
+        const step2 = document.getElementById("step2");
+
+        loading.style.display = view === "loading" ? "block" : "none";
+        step1.style.display = view === "auth" ? "block" : "none";
+        step2.style.display = view === "app" ? "block" : "none";
+      }
+
+      function setStats(joined, total) {
+        const remaining = Math.max(0, total - joined);
+        const percent = total ? Math.round((joined / total) * 100) : 0;
+
+        document.getElementById("joinedCount").textContent = String(joined);
+        document.getElementById("remainingCount").textContent =
+          String(remaining);
+        document.getElementById("totalCount").textContent = String(total);
+        document.getElementById("progressFill").style.width = `${percent}%`;
+      }
+
+      async function readJson(response, fallback) {
+        return response.json().catch(() => fallback);
+      }
+
+      function setStatus(type, msg) {
+        statusBox.className = "status";
+
+        if (!msg) {
+          statusBox.textContent = "";
+          return;
+        }
+
+        statusBox.classList.add(type);
+        statusBox.textContent = msg;
+      }
+
+      function setSupportMessage(message = "") {
+        supportMessage.value = message;
+        supportBox.classList.toggle("show", !!message);
+      }
+
+      async function copySupportMessage() {
+        const text = supportMessage.value.trim();
+        if (!text) return;
+
+        try {
+          await navigator.clipboard.writeText(text);
+          setStatus(
+            "success",
+            "Copied error details. Send them to Dheeraj S on Slack.",
+          );
+        } catch (_error) {
+          supportMessage.focus();
+          supportMessage.select();
+          setStatus(
+            "error",
+            "Copy failed automatically. Select the text and copy it manually.",
+          );
+        }
+      }
+
+      async function copyValue(text, successMessage) {
+        const value = (text || "").trim();
+
+        if (!value) {
+          setStatus("error", "Value is not available yet.");
+          return;
+        }
+
+        try {
+          await navigator.clipboard.writeText(value);
+          setStatus("success", successMessage);
+        } catch (_error) {
+          setStatus(
+            "error",
+            "Could not copy automatically. Please copy manually.",
+          );
+        }
+      }
+
+      async function copySlackId() {
+        await copyValue(currentSlackId, "Slack ID copied.");
+      }
+
+      async function copyUsername() {
+        await copyValue(currentUsername, "Slack username copied.");
+      }
+
+      async function copyEmail() {
+        await copyValue(currentEmail, "Email copied.");
+      }
+
+      async function loadYswsList() {
+        if (yswsList.length) return true;
+
+        try {
+          const response = await apiGet("/ysws.json");
+          if (!response.ok) throw new Error("catalog_failed");
+
+          const list = await response.json();
+          if (!Array.isArray(list)) throw new Error("invalid_ysws_list");
+
+          yswsList = list
+            .filter((item) => item?.name && item?.form && item?.channel)
+            .map((item) => ({
+              name: String(item.name),
+              form: String(item.form),
+              channel: String(item.channel),
+              description: String(
+                item.description || "No description added yet.",
+              ),
+              website: item.website ? String(item.website) : "",
+            }));
+
+          return true;
+        } catch (_error) {
+          setStatus(
+            "error",
+            "Could not load the YSWS list. Please refresh and try again.",
+          );
+          return false;
+        }
+      }
+
+      function openYswsModal(channel) {
+        const ysws = yswsList.find((entry) => entry.channel === channel);
+        if (!ysws) return;
+
+        yswsModalTitle.textContent = ysws.name;
+        yswsModalDesc.textContent =
+          ysws.description || "No description added yet.";
+
+        if (ysws.website) {
+          yswsWebsiteBtn.style.display = "inline-flex";
+          yswsWebsiteBtn.onclick = () => window.open(ysws.website, "_blank");
+        } else {
+          yswsWebsiteBtn.style.display = "none";
+          yswsWebsiteBtn.onclick = null;
+        }
+
+        yswsModal.classList.add("show");
+      }
+
+      function closeYswsModal(event) {
+        if (event && event.target !== yswsModal) return;
+        yswsModal.classList.remove("show");
+      }
+
+      function getQueryParam(name) {
+        return new URLSearchParams(window.location.search).get(name) || "";
+      }
+
+      function clearOauthErrorFromUrl() {
+        const nextUrl = new URL(window.location.href);
+        nextUrl.searchParams.delete("oauth_error");
+        window.history.replaceState(
+          {},
+          "",
+          nextUrl.pathname + nextUrl.search + nextUrl.hash,
+        );
+      }
+
+      function showLoggedOut(message = "") {
+        setView("auth");
+        document.getElementById("programs").innerHTML = "";
+
+        latestMembership = {};
+        currentSlackId = "";
+        currentUsername = "";
+        currentEmail = "";
+
+        document.getElementById("hello").textContent = "";
+        document.getElementById("avatar").removeAttribute("src");
+        document.getElementById("slackIdText").textContent = "—";
+        document.getElementById("usernameText").textContent = "—";
+        document.getElementById("emailText").textContent = "—";
+        updateVerificationUi({
+          isVerified: null,
+          verificationLabel: "Verification unknown",
+          verificationStatus: "",
+          yswsEligible: null,
+        });
+        usernameCopyBtn.style.display = "none";
+        emailCopyBtn.style.display = "none";
+
+        setStats(0, 0);
+
+        setFilter("all");
+        setStatus(message ? "error" : "", message);
+      }
+
+      async function loadDashboard() {
+        setView("loading");
+        setStatus("", "");
+
+        const yswsReady = await loadYswsList();
+        if (!yswsReady) {
+          showLoggedOut(
+            "Could not load the YSWS list. Please refresh and try again.",
+          );
+          return;
+        }
+
+        let userResponse;
+        try {
+          userResponse = await apiGet("/api/user");
+        } catch (_error) {
+          showLoggedOut(MEMBERSHIP_LOAD_ERROR);
+          return;
+        }
+
+        if (!userResponse.ok) {
+          showLoggedOut(
+            userResponse.status === 401 || userResponse.status === 403
+              ? ""
+              : MEMBERSHIP_LOAD_ERROR,
+          );
+          return;
+        }
+
+        const user = await readJson(userResponse, { ok: false });
+        if (!user.ok) {
+          showLoggedOut(
+            user.error === "not_authenticated" ? "" : MEMBERSHIP_LOAD_ERROR,
+          );
+          return;
+        }
+
+        setView("app");
+        setSupportMessage("");
+
+        document.getElementById("hello").textContent =
+          `Hi ${user.name || "there"}!`;
+        document.getElementById("avatar").src = user.avatar || DEFAULT_AVATAR;
+
+        currentSlackId = String(user.slackId || "")
+          .trim()
+          .toUpperCase();
+        currentUsername = String(user.username || "").trim();
+        currentEmail = String(user.email || "").trim();
+
+        document.getElementById("slackIdText").textContent =
+          currentSlackId || "—";
+        document.getElementById("usernameText").textContent =
+          currentUsername || "—";
+        document.getElementById("emailText").textContent = currentEmail || "—";
+        usernameCopyBtn.style.display = currentUsername
+          ? "inline-flex"
+          : "none";
+        emailCopyBtn.style.display = currentEmail ? "inline-flex" : "none";
+        updateVerificationUi(user);
+
+        latestMembership = user.membership || {};
+        renderYsws();
+      }
+
+      function updateVerificationUi(user) {
+        const badge = document.getElementById("verificationBadge");
+        const detail = document.getElementById("verificationDetail");
+        const eligibility = document.getElementById("eligibilityDetail");
+        const isVerified =
+          typeof user?.isVerified === "boolean" ? user.isVerified : null;
+        const yswsEligible =
+          typeof user?.yswsEligible === "boolean" ? user.yswsEligible : null;
+        const label = String(
+          user?.verificationLabel || "Verification unknown",
+        ).trim();
+        const rawStatus = String(user?.verificationStatus || "")
+          .trim()
+          .replace(/[_-]+/g, " ");
+
+        badge.className = `verification-pill ${
+          isVerified === true
+            ? "verified"
+            : isVerified === false
+              ? "not-verified"
+              : "unknown"
+        }`;
+        badge.textContent = `Verification: ${label}`;
+        detail.textContent = rawStatus
+          ? `Status: ${rawStatus}`
+          : "Status: unavailable";
+        eligibility.textContent =
+          yswsEligible === true
+            ? "YSWS eligibility: eligible"
+            : yswsEligible === false
+              ? "YSWS eligibility: not eligible"
+              : "YSWS eligibility: unknown";
+      }
+
+      function setFilter(nextFilter) {
+        currentFilter = nextFilter;
+
+        document
+          .getElementById("filterAll")
+          .classList.toggle("active", nextFilter === "all");
+        document
+          .getElementById("filterTodo")
+          .classList.toggle("active", nextFilter === "todo");
+        document
+          .getElementById("filterJoined")
+          .classList.toggle("active", nextFilter === "joined");
+
+        renderYsws();
+      }
+
+      function renderYsws() {
+        const yswsGrid = document.getElementById("programs");
+        yswsGrid.innerHTML = "";
+
+        const rows = yswsList
+          .map((item) => ({
+            ...item,
+            joined: !!latestMembership[item.channel],
+          }))
+          .filter((item) => {
+            if (currentFilter === "joined") return item.joined;
+            if (currentFilter === "todo") return !item.joined;
+            return true;
+          })
+          .sort(
+            (a, b) =>
+              Number(a.joined) - Number(b.joined) ||
+              a.name.localeCompare(b.name),
+          );
+
+        const joinedCount = yswsList.filter(
+          (item) => latestMembership[item.channel],
+        ).length;
+        const total = yswsList.length;
+        setStats(joinedCount, total);
+
+        if (!rows.length) {
+          const empty = document.createElement("div");
+          empty.className = "card";
+          empty.innerHTML =
+            "<h3>Nothing here</h3><p class='muted'>Try a different filter.</p>";
+          yswsGrid.appendChild(empty);
+          return;
+        }
+
+        rows.forEach((ysws) => {
+          const card = document.createElement("div");
+          card.className = "card";
+
+          const cardHead = document.createElement("div");
+          cardHead.className = "card-head";
+
+          const title = document.createElement("h3");
+          title.textContent = ysws.name;
+
+          const channelId = document.createElement("span");
+          channelId.className = "channel-id";
+          channelId.textContent = ysws.channel;
+
+          cardHead.append(title, channelId);
+
+          const description = document.createElement("p");
+          description.className = "muted";
+          description.textContent =
+            "Join the Slack channel and complete your RSVP form.";
+
+          card.append(cardHead, description);
+
+          if (ysws.joined) {
+            const badge = document.createElement("span");
+            badge.className = "badge";
+            badge.textContent = "Already in channel";
+            card.appendChild(badge);
+          }
+
+          const actions = document.createElement("div");
+          actions.className = "actions";
+
+          const joinButton = document.createElement("button");
+          if (ysws.joined) {
+            joinButton.classList.add("joined");
+            joinButton.disabled = true;
+            joinButton.textContent = "Joined";
+          } else {
+            joinButton.textContent = "Add me to channel";
+            joinButton.addEventListener("click", () =>
+              joinYsws(ysws.channel, joinButton, ysws.name),
+            );
+          }
+
+          const formButton = document.createElement("button");
+          formButton.textContent = "Fill RSVP";
+          formButton.addEventListener("click", () =>
+            window.open(ysws.form, "_blank"),
+          );
+
+          const modalButton = document.createElement("button");
+          modalButton.className = "joined description-btn";
+          modalButton.type = "button";
+          modalButton.textContent = "Description";
+          modalButton.addEventListener("click", () =>
+            openYswsModal(ysws.channel),
+          );
+
+          actions.append(joinButton, formButton, modalButton);
+          card.appendChild(actions);
+          yswsGrid.appendChild(card);
+        });
+      }
+
+      async function joinYsws(channel, btn, yswsName) {
+        btn.innerText = "Joining...";
+        btn.disabled = true;
+
+        let data = { ok: false };
+
+        try {
+          const response = await apiPost("/api/join", { channel });
+          data = await response.json().catch(() => ({ ok: false }));
+        } catch (_error) {
+          data = { ok: false };
+        }
+
+        if (!data.ok) {
+          btn.innerText = "Try again";
+          btn.disabled = false;
+          setStatus(
+            "error",
+            data.message ||
+              `Could not add you to ${yswsName}. If this keeps happening, ask an organizer to add the bot to the channel.`,
+          );
+          return;
+        }
+
+        latestMembership[channel] = true;
+        renderYsws();
+        setStatus("success", `You were added to ${yswsName}.`);
+      }
+
+      async function boot() {
+        document.getElementById("loginBtn").href = api("/auth/start");
+        document.getElementById("logoutBtn").href = api("/auth/logout");
+
+        const oauthError = getQueryParam("oauth_error");
+        if (oauthError) {
+          showLoggedOut(
+            "HC login failed. If this keeps happening, send the details below to Dheeraj S.",
+          );
+          setSupportMessage(decodeURIComponent(oauthError));
+          clearOauthErrorFromUrl();
+          return;
+        }
+
+        setSupportMessage("");
+        await loadDashboard();
+      }
+
+      window.setFilter = setFilter;
+      window.copySupportMessage = copySupportMessage;
+      window.copySlackId = copySlackId;
+      window.copyUsername = copyUsername;
+      window.copyEmail = copyEmail;
+      window.openYswsModal = openYswsModal;
+      window.closeYswsModal = closeYswsModal;
+
+      boot();
+    </script>
+  </body>
+</html>
