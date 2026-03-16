@@ -427,283 +427,288 @@ export default {
       return false;
     }
 
-    if (url.pathname === "/auth/start") {
-      if (!env.HC_CLIENT_ID) {
-        return new Response("Missing HC_CLIENT_ID", { status: 500 });
-      }
+    switch (url.pathname) {
+      case "/auth/start": {
+        if (!env.HC_CLIENT_ID) {
+          return new Response("Missing HC_CLIENT_ID", { status: 500 });
+        }
 
-      const state = randomState();
-      const authUrl = new URL(`${HC_AUTH_BASE}/oauth/authorize`);
-      authUrl.searchParams.set("client_id", env.HC_CLIENT_ID);
-      authUrl.searchParams.set("redirect_uri", getRedirectUri());
-      authUrl.searchParams.set("response_type", "code");
-      authUrl.searchParams.set("scope", HC_OAUTH_SCOPE);
-      authUrl.searchParams.set("state", state);
+        const state = randomState();
+        const authUrl = new URL(`${HC_AUTH_BASE}/oauth/authorize`);
+        authUrl.searchParams.set("client_id", env.HC_CLIENT_ID);
+        authUrl.searchParams.set("redirect_uri", getRedirectUri());
+        authUrl.searchParams.set("response_type", "code");
+        authUrl.searchParams.set("scope", HC_OAUTH_SCOPE);
+        authUrl.searchParams.set("state", state);
 
-      return new Response(null, {
-        status: 302,
-        headers: {
-          Location: authUrl.toString(),
-          "Set-Cookie": serializeCookie("hcOauthState", state, 600),
-        },
-      });
-    }
-
-    if (url.pathname === "/auth/callback") {
-      const cookies = parseCookies(request);
-      const code = (url.searchParams.get("code") || "").trim();
-      const state = (url.searchParams.get("state") || "").trim();
-
-      if (!code || !state || state !== cookies.hcOauthState) {
-        const target = allowedOrigin || "/";
         return new Response(null, {
           status: 302,
           headers: {
-            Location: `${target}?oauth_error=${encodeURIComponent("Hack Club Auth verification failed")}`,
-            "Set-Cookie": serializeCookie("hcOauthState", "", 0),
+            Location: authUrl.toString(),
+            "Set-Cookie": serializeCookie("hcOauthState", state, 600),
           },
         });
       }
 
-      const tokenData = await hcTokenExchange({
-        client_id: env.HC_CLIENT_ID,
-        client_secret: env.HC_CLIENT_SECRET,
-        redirect_uri: getRedirectUri(),
-        code,
-        grant_type: "authorization_code",
-      });
+      case "/auth/callback": {
+        const cookies = parseCookies(request);
+        const code = (url.searchParams.get("code") || "").trim();
+        const state = (url.searchParams.get("state") || "").trim();
 
-      if (!tokenData.access_token) {
-        const target = allowedOrigin || "/";
-        return new Response(null, {
-          status: 302,
-          headers: {
-            Location: `${target}?oauth_error=${encodeURIComponent(tokenData.error || "Token exchange failed")}`,
-            "Set-Cookie": serializeCookie("hcOauthState", "", 0),
-          },
+        if (!code || !state || state !== cookies.hcOauthState) {
+          const target = allowedOrigin || "/";
+          return new Response(null, {
+            status: 302,
+            headers: {
+              Location: `${target}?oauth_error=${encodeURIComponent("Hack Club Auth verification failed")}`,
+              "Set-Cookie": serializeCookie("hcOauthState", "", 0),
+            },
+          });
+        }
+
+        const tokenData = await hcTokenExchange({
+          client_id: env.HC_CLIENT_ID,
+          client_secret: env.HC_CLIENT_SECRET,
+          redirect_uri: getRedirectUri(),
+          code,
+          grant_type: "authorization_code",
         });
-      }
 
-      const me = await hcMe(tokenData.access_token);
-      const profile = parseHCProfile(me.data || {});
+        if (!tokenData.access_token) {
+          const target = allowedOrigin || "/";
+          return new Response(null, {
+            status: 302,
+            headers: {
+              Location: `${target}?oauth_error=${encodeURIComponent(tokenData.error || "Token exchange failed")}`,
+              "Set-Cookie": serializeCookie("hcOauthState", "", 0),
+            },
+          });
+        }
 
-      const headers = new Headers({ Location: allowedOrigin || "/" });
-      headers.append("Set-Cookie", serializeCookie("hcOauthState", "", 0));
-      headers.append(
-        "Set-Cookie",
-        serializeCookie("hcAccessToken", tokenData.access_token, 15552000),
-      );
-      headers.append(
-        "Set-Cookie",
-        serializeCookie(
-          "hcRefreshToken",
-          tokenData.refresh_token || "",
-          31536000,
-        ),
-      );
-      headers.append(
-        "Set-Cookie",
-        serializeCookie("hcSlackId", profile.slackId, 31536000),
-      );
-      headers.append(
-        "Set-Cookie",
-        serializeCookie("hcName", profile.name, 31536000, { httpOnly: false }),
-      );
-      headers.append(
-        "Set-Cookie",
-        serializeCookie("hcEmail", profile.email, 31536000, {
-          httpOnly: false,
-        }),
-      );
-      headers.append(
-        "Set-Cookie",
-        serializeCookie("hcAvatar", profile.avatar, 31536000, {
-          httpOnly: false,
-        }),
-      );
+        const me = await hcMe(tokenData.access_token);
+        const profile = parseHCProfile(me.data || {});
 
-      return new Response(null, { status: 302, headers });
-    }
-
-    if (url.pathname === "/auth/logout") {
-      const headers = new Headers({ Location: allowedOrigin || "/" });
-      [
-        "hcAccessToken",
-        "hcRefreshToken",
-        "hcSlackId",
-        "hcName",
-        "hcEmail",
-        "hcAvatar",
-        "hcOauthState",
-      ].forEach((key) => {
+        const headers = new Headers({ Location: allowedOrigin || "/" });
+        headers.append("Set-Cookie", serializeCookie("hcOauthState", "", 0));
         headers.append(
           "Set-Cookie",
-          serializeCookie(key, "", 0, {
-            httpOnly: !PUBLIC_COOKIE_KEYS.includes(key),
-          }),
+          serializeCookie("hcAccessToken", tokenData.access_token, 15552000),
         );
-      });
-      return new Response(null, { status: 302, headers });
-    }
-
-    if (url.pathname === "/ysws.json") {
-      return withCors(Response.json(YSWS_LIST));
-    }
-
-    if (url.pathname === "/api/user") {
-      const cookies = parseCookies(request);
-      const accessToken = (cookies.hcAccessToken || "").trim();
-      const fallbackSlackId = (cookies.hcSlackId || "").trim().toUpperCase();
-
-      if (!accessToken) {
-        return withCors(
-          Response.json(
-            { ok: false, error: "not_authenticated" },
-            { status: 401 },
+        headers.append(
+          "Set-Cookie",
+          serializeCookie(
+            "hcRefreshToken",
+            tokenData.refresh_token || "",
+            31536000,
           ),
         );
+        headers.append(
+          "Set-Cookie",
+          serializeCookie("hcSlackId", profile.slackId, 31536000),
+        );
+        headers.append(
+          "Set-Cookie",
+          serializeCookie("hcName", profile.name, 31536000, { httpOnly: false }),
+        );
+        headers.append(
+          "Set-Cookie",
+          serializeCookie("hcEmail", profile.email, 31536000, {
+            httpOnly: false,
+          }),
+        );
+        headers.append(
+          "Set-Cookie",
+          serializeCookie("hcAvatar", profile.avatar, 31536000, {
+            httpOnly: false,
+          }),
+        );
+
+        return new Response(null, { status: 302, headers });
       }
 
-      const me = await hcMe(accessToken);
-      if (!me.ok) {
-        return withCors(
-          Response.json({ ok: false, error: "auth_expired" }, { status: 401 }),
-        );
+      case "/auth/logout": {
+        const headers = new Headers({ Location: allowedOrigin || "/" });
+        [
+          "hcAccessToken",
+          "hcRefreshToken",
+          "hcSlackId",
+          "hcName",
+          "hcEmail",
+          "hcAvatar",
+          "hcOauthState",
+        ].forEach((key) => {
+          headers.append(
+            "Set-Cookie",
+            serializeCookie(key, "", 0, {
+              httpOnly: !PUBLIC_COOKIE_KEYS.includes(key),
+            }),
+          );
+        });
+        return new Response(null, { status: 302, headers });
       }
 
-      const profile = parseHCProfile(me.data || {}, cookies);
-      const slackId = normalizeSlackId(profile.slackId || fallbackSlackId);
-      let slackUser = null;
+      case "/ysws.json":
+        return withCors(Response.json(YSWS_LIST));
 
-      if (slackId && env.SLACK_TOKEN) {
-        const slackUserData = await slackGet(
-          "users.info",
-          { user: slackId },
-          env,
-        );
-        if (slackUserData?.ok && slackUserData.user) {
-          slackUser = slackUserData.user;
+      case "/api/user": {
+        const cookies = parseCookies(request);
+        const accessToken = (cookies.hcAccessToken || "").trim();
+        const fallbackSlackId = (cookies.hcSlackId || "").trim().toUpperCase();
+
+        if (!accessToken) {
+          return withCors(
+            Response.json(
+              { ok: false, error: "not_authenticated" },
+              { status: 401 },
+            ),
+          );
         }
-      }
 
-      const slackUsername = String(slackUser?.name || "").trim();
-      const slackName = String(
-        slackUser?.profile?.real_name ||
-          slackUser?.profile?.display_name ||
-          slackUser?.real_name ||
-          "",
-      ).trim();
-      const slackAvatar = String(
-        slackUser?.profile?.image_192 ||
-          slackUser?.profile?.image_72 ||
-          slackUser?.profile?.image_48 ||
-          "",
-      ).trim();
-      const slackEmail = String(slackUser?.profile?.email || "").trim();
+        const me = await hcMe(accessToken);
+        if (!me.ok) {
+          return withCors(
+            Response.json({ ok: false, error: "auth_expired" }, { status: 401 }),
+          );
+        }
 
-      const membership = {};
-      if (slackId && env.SLACK_TOKEN) {
-        await Promise.all(
-          YSWS_LIST.map(async (p) => {
-            membership[p.channel] = await isUserInChannel(p.channel, slackId);
+        const profile = parseHCProfile(me.data || {}, cookies);
+        const slackId = normalizeSlackId(profile.slackId || fallbackSlackId);
+        let slackUser = null;
+
+        if (slackId && env.SLACK_TOKEN) {
+          const slackUserData = await slackGet(
+            "users.info",
+            { user: slackId },
+            env,
+          );
+          if (slackUserData?.ok && slackUserData.user) {
+            slackUser = slackUserData.user;
+          }
+        }
+
+        const slackUsername = String(slackUser?.name || "").trim();
+        const slackName = String(
+          slackUser?.profile?.real_name ||
+            slackUser?.profile?.display_name ||
+            slackUser?.real_name ||
+            "",
+        ).trim();
+        const slackAvatar = String(
+          slackUser?.profile?.image_192 ||
+            slackUser?.profile?.image_72 ||
+            slackUser?.profile?.image_48 ||
+            "",
+        ).trim();
+        const slackEmail = String(slackUser?.profile?.email || "").trim();
+
+        const membership = {};
+        if (slackId && env.SLACK_TOKEN) {
+          await Promise.all(
+            YSWS_LIST.map(async (p) => {
+              membership[p.channel] = await isUserInChannel(p.channel, slackId);
+            }),
+          );
+        } else {
+          for (const p of YSWS_LIST) membership[p.channel] = false;
+        }
+
+        return withCors(
+          Response.json({
+            ok: true,
+            slackId,
+            username: slackUsername || profile.username,
+            name: slackName || profile.name,
+            avatar: slackAvatar || profile.avatar,
+            email: slackEmail || profile.email,
+            membership,
+            verificationStatus: profile.verificationStatus,
+            verificationLabel: profile.verificationLabel,
+            isVerified: profile.isVerified,
+            yswsEligible: profile.yswsEligible,
           }),
         );
-      } else {
-        for (const p of YSWS_LIST) membership[p.channel] = false;
       }
 
-      return withCors(
-        Response.json({
-          ok: true,
-          slackId,
-          username: slackUsername || profile.username,
-          name: slackName || profile.name,
-          avatar: slackAvatar || profile.avatar,
-          email: slackEmail || profile.email,
-          membership,
-          verificationStatus: profile.verificationStatus,
-          verificationLabel: profile.verificationLabel,
-          isVerified: profile.isVerified,
-          yswsEligible: profile.yswsEligible,
-        }),
-      );
-    }
+      case "/api/join": {
+        if (request.method !== "POST") break;
 
-    if (url.pathname === "/api/join" && request.method === "POST") {
-      const cookies = parseCookies(request);
-      const accessToken = (cookies.hcAccessToken || "").trim();
+        const cookies = parseCookies(request);
+        const accessToken = (cookies.hcAccessToken || "").trim();
 
-      if (!accessToken) {
-        return withCors(
-          Response.json(
-            { ok: false, error: "not_authenticated" },
-            { status: 401 },
-          ),
-        );
-      }
+        if (!accessToken) {
+          return withCors(
+            Response.json(
+              { ok: false, error: "not_authenticated" },
+              { status: 401 },
+            ),
+          );
+        }
 
-      if (!env.SLACK_TOKEN) {
-        return withCors(
-          Response.json(
-            { ok: false, error: "missing_slack_token" },
-            { status: 500 },
-          ),
-        );
-      }
+        if (!env.SLACK_TOKEN) {
+          return withCors(
+            Response.json(
+              { ok: false, error: "missing_slack_token" },
+              { status: 500 },
+            ),
+          );
+        }
 
-      const data = await request.json().catch(() => null);
-      if (!data?.channel) {
-        return withCors(
-          Response.json(
-            { ok: false, error: "invalid_payload" },
-            { status: 400 },
-          ),
-        );
-      }
+        const data = await request.json().catch(() => null);
+        if (!data?.channel) {
+          return withCors(
+            Response.json(
+              { ok: false, error: "invalid_payload" },
+              { status: 400 },
+            ),
+          );
+        }
 
-      const me = await hcMe(accessToken);
-      const profile = parseHCProfile(me.data || {}, cookies);
-      const slackId = normalizeSlackId(profile.slackId || cookies.hcSlackId);
+        const me = await hcMe(accessToken);
+        const profile = parseHCProfile(me.data || {}, cookies);
+        const slackId = normalizeSlackId(profile.slackId || cookies.hcSlackId);
 
-      if (!slackId) {
-        return withCors(
-          Response.json(
-            {
-              ok: false,
-              error: "missing_slack_id",
-              message: "Grant slack_id scope and reconnect.",
+        if (!slackId) {
+          return withCors(
+            Response.json(
+              {
+                ok: false,
+                error: "missing_slack_id",
+                message: "Grant slack_id scope and reconnect.",
+              },
+              { status: 400 },
+            ),
+          );
+        }
+
+        const invite = await fetch(
+          "https://slack.com/api/conversations.invite",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${env.SLACK_TOKEN}`,
+              "Content-Type": "application/json",
             },
-            { status: 400 },
-          ),
+            body: JSON.stringify({ channel: data.channel, users: slackId }),
+          },
         );
+
+        const inviteData = await invite
+          .json()
+          .catch(() => ({ ok: false, error: "invite_failed" }));
+        if (!inviteData.ok && inviteData.error !== "already_in_channel") {
+          return withCors(
+            Response.json(
+              { ok: false, error: inviteData.error || "invite_failed" },
+              { status: 400 },
+            ),
+          );
+        }
+
+        return withCors(Response.json({ ok: true }));
       }
 
-      const invite = await fetch("https://slack.com/api/conversations.invite", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${env.SLACK_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ channel: data.channel, users: slackId }),
-      });
-
-      const inviteData = await invite
-        .json()
-        .catch(() => ({ ok: false, error: "invite_failed" }));
-      if (!inviteData.ok && inviteData.error !== "already_in_channel") {
-        return withCors(
-          Response.json(
-            { ok: false, error: inviteData.error || "invite_failed" },
-            { status: 400 },
-          ),
-        );
-      }
-
-      return withCors(Response.json({ ok: true }));
-    }
-
-    if (url.pathname === "/health") {
-      return withCors(Response.json({ ok: true, service: "ysws-rsvp-hca" }));
+      case "/health":
+        return withCors(Response.json({ ok: true, service: "ysws-rsvp-hca" }));
     }
 
     return withCors(new Response("Not found", { status: 404 }));
