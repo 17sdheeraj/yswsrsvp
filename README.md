@@ -151,6 +151,8 @@ Slack bot likely lacks permissions or is not present in target channel.
 
 ## Notes
 
-- Some parts of this project are vibecoded
+- Some parts of this project are vibecoded. This does not mean I vibecoded the whole website 😭 I spent alot of time fixing and testing this project
 - Thanks to [HCA docs](https://auth.hackclub.com/docs/welcome) and [slack docs](https://docs.slack.dev/)!
 - Code indentation by [prettier](https://prettier.io/)
+- Thanks to [Saurabh Tiwari](https://hackclub.enterprise.slack.com/team/U09B8FXUS78) for testing and providing feedback when I first made this project! :)
+- Contributors: [@Samhithpola](https://github.com/SamhithPola2025)
