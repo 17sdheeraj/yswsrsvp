@@ -78,20 +78,37 @@ export default {
     }
 
     async function hcTokenExchange(body) {
-      const response = await fetch(`${HC_AUTH_BASE}/oauth/token`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      return response.json().catch(() => ({ error: "invalid_token_response" }));
+      try {
+        const response = await fetch(`${HC_AUTH_BASE}/oauth/token`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const data = await response.json();
+        return data;
+      } catch (err) {
+        return {
+          ok: false,
+          error: err.message || "network_or_parse_error",
+        };
+      }
     }
 
     async function hcMe(accessToken) {
-      const response = await fetch(`${HC_AUTH_BASE}/api/v1/me`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      const data = await response.json().catch(() => ({}));
-      return { ok: response.ok, status: response.status, data };
+      try {
+        const response = await fetch(`${HC_AUTH_BASE}/api/v1/me`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        const data = await response.json();
+        return { ok: response.ok, status: response.status, data };
+      } catch (err) {
+        return {
+          ok: false,
+          status: 0,
+          data: {},
+          error: err.message || "network_or_parse_error",
+        };
+      }
     }
 
     function getPathValue(source, path) {
