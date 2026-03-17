@@ -82,5 +82,19 @@
     "channel": "C0AHPG4LPUM",
     "description": "Build AI or ML related hardware or software; get funding or prizes!",
     "website": ""
+  },
+  {
+    "name": "HYPOTHESIS",
+    "form": "https://forms.fillout.com/t/nxSKnmUpA1us",
+    "channel": "C0ADJU70DF1M",
+    "description": "Build a research project using code or hardware, get cool prizes like Raspberry Pis or Jetson Nanos!",
+    "website": ""
+  },
+  {
+    "name": "fr",
+    "form": "https://fr.dino.icu",
+    "channel": "C0AM47PLVMW",
+    "description": "YS: build a real-time or collaborative app\nWS: server credits, domains, keyboards, hosting grants",
+    "website": "fr.dino.icu"
   }
 ]
