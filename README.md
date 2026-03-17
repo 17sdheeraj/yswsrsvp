@@ -1,12 +1,17 @@
 # YSWS-RSVP
 
-This app helps Hackclub members sign in with HCA, check channel membership, join YSWS Slack channels, and quickly copy profile details for RSVP forms.
+This app helps Hackclub members sign in with HCA, check channel membership, join YSWS Slack channels, mark RSVP completion, and quickly copy profile details for RSVP forms.
 
 ## Project structure
 
-- `backend/worker.js` - Worker API + OAuth + Slack membership/join logic
+- `backend/worker.js` - Worker API + OAuth + Slack membership/join/RSVP logic + admin APIs
 - `backend/public/ysws.json` - YSWS list used by the Worker (`/ysws.json`)
-- `frontend/index.html` - static dashboard UI
+- `frontend/index.html` - user dashboard UI
+- `frontend/script.js` - user dashboard logic
+- `frontend/styles.css` - shared styles
+- `frontend/admin.html` - admin dashboard UI
+- `frontend/admin.js` - admin dashboard logic
+- `frontend/404.html` - 404 page
 
 ## What this app does
 
@@ -15,6 +20,9 @@ This app helps Hackclub members sign in with HCA, check channel membership, join
 - Checks whether user is already in each YSWS Slack channel
 - Users can copy username, Slack ID, and email from the dashboard for filling YSWS forms quickly
 - Lets user join channels via bot
+- Lets user mark/unmark RSVP done per YSWS (persisted in KV)
+- Completion bar is based on **join + RSVP** together
+- Includes admin dashboard for metrics, audit logs, and view-as-user testing
 
 ---
 
@@ -66,6 +74,17 @@ From Slack API
 - `FRONTEND_ORIGIN` = exact frontend origin (for CORS + cookies)
   - example: `https://your-frontend-domain.com`
 
+### KV Binding
+
+- `YSWS` (required)
+
+Used for:
+
+- metrics persistence
+- audit logs
+- rate-limit state
+- RSVP done state per user
+
 ### Required data file
 
 `backend/worker.js` imports `./public/ysws.json`.
@@ -100,7 +119,7 @@ In `frontend/index.html`, set:
 const API_BASE = "https://<your-worker-subdomain>.workers.dev";
 ```
 
-Deploy `frontend/index.html` to your static host.
+Deploy all files in `frontend/` to your static host (`index.html`, `script.js`, `styles.css`, `admin.html`, `admin.js`, `404.html`).
 
 ---
 
@@ -115,8 +134,25 @@ Deploy `frontend/index.html` to your static host.
 ### App API
 
 - `GET /ysws.json` - YSWS list
-- `GET /api/user` - profile + membership map
+- `GET /api/user` - profile + membership map + RSVP done map
 - `POST /api/join` - join a Slack channel
+- `POST /api/rsvp` - mark/unmark RSVP done for a channel
+
+### Admin API
+
+- `GET /api/admin/access`
+- `GET /api/admin/metrics`
+- `GET /api/admin/audit?limit=...`
+- `DELETE /api/admin/audit`
+- `DELETE /api/admin/audit?id=<eventId>`
+- `DELETE /api/admin/errors`
+- `GET /api/admin/view-as?slackId=...`
+- `GET /api/admin/lookup?slackId=...`
+- `POST /api/admin/test-join`
+- `POST /api/admin/test-rsvp`
+
+### Misc
+
 - `GET /health` - health check
 
 ---
@@ -146,6 +182,10 @@ HC token expired or revoked. Logout and login again.
 ### Invite failures
 
 Slack bot likely lacks permissions or is not present in target channel.
+
+### `rate_limited`
+
+Too many join/RSVP requests from one IP in a short window. Wait for the reset time and retry.
 
 ---
 
