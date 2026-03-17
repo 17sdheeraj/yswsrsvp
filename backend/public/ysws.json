@@ -110,5 +110,12 @@
     "channel": "C0AL6RBD287",
     "description": "Automake is a YSWS where you learn how to build automations. Whether it be email responders or Slack bots, you can get rewarded for it. Ship your first automation and you will receive your very own SBC to host and run your workflow on.",
     "website": "automake.dino.icu"
+  },
+  {
+    "name": "Codechange",
+    "form": "https://one-mink.fillout.com/codechange",
+    "channel": "C0ACWR4RMA6",
+    "description": "Hack Club World Wide Exchange Program!",
+    "website": "codechange.onemink.com"
   }
 ]
