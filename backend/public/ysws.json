@@ -96,5 +96,19 @@
     "channel": "C0AM47PLVMW",
     "description": "YS: build a real-time or collaborative app\nWS: server credits, domains, keyboards, hosting grants",
     "website": "fr.dino.icu"
+  },
+  {
+    "name": "onekey",
+    "form": "https://onekey.fillout.com/rsvp",
+    "channel": "C0AM132QQUR",
+    "description": "make a program that only uses one key, get a one key macropad!",
+    "website": "https://onekey.dino.icu/"
+  },
+  {
+    "name": "Automake",
+    "form": "https://forms.fillout.com/t/aMV1bXZoGvus",
+    "channel": "C0AL6RBD287",
+    "description": "Automake is a YSWS where you learn how to build automations. Whether it be email responders or Slack bots, you can get rewarded for it. Ship your first automation and you will receive your very own SBC to host and run your workflow on.",
+    "website": "automake.dino.icu"
   }
 ]
