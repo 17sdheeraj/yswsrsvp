@@ -1,16 +1,20 @@
-      const API_BASE =
+﻿      const API_BASE =
         window.__API_BASE__ || "https://ysws-rsvp-hca.sdheeraj.workers.dev";
+      const ADMIN_SLACK_ID = "U0828RTU7FE";
       const DEFAULT_AVATAR =
         "https://user-cdn.hackclub-assets.com/019cf11f-eade-7304-ab15-71833ccc4c32/icon-rounded.svg";
       const MEMBERSHIP_LOAD_ERROR =
-        "Unable to load your memberships right now. Please try again.";
+        "Couldn't load your memberships right now. Slack might be on a coffee break, try again in a bit.";
 
       let yswsList = [];
       let latestMembership = {};
+      let latestRsvpDone = {};
       let currentFilter = "all";
+      let currentSearchQuery = "";
       let currentSlackId = "";
       let currentUsername = "";
       let currentEmail = "";
+      let isAdminUser = false;
 
       const statusBox = document.getElementById("statusBox");
       const supportBox = document.getElementById("supportBox");
@@ -21,15 +25,14 @@
       const yswsModalTitle = document.getElementById("programModalTitle");
       const yswsModalDesc = document.getElementById("programModalDesc");
       const yswsWebsiteBtn = document.getElementById("programWebsiteBtn");
+      const adminLink = document.getElementById("adminLink");
 
       function api(path) {
         return `${API_BASE}${path}`;
       }
 
       async function apiGet(path) {
-        return fetch(api(path), {
-          credentials: "include",
-        });
+        return fetch(api(path), { credentials: "include" });
       }
 
       async function apiPost(path, body) {
@@ -39,6 +42,44 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         });
+      }
+
+      function getSwalOptions(overrides = {}) {
+        return {
+          background: "#111827",
+          color: "#f8fafc",
+          buttonsStyling: false,
+          customClass: {
+            popup: "hc-swal-popup",
+            confirmButton: "swal-confirm-btn",
+            cancelButton: "swal-cancel-btn",
+          },
+          ...overrides,
+        };
+      }
+
+      async function showPopup({ icon = "info", title = "Notice", text = "" } = {}) {
+        if (window.Swal) {
+          return window.Swal.fire(getSwalOptions({ icon, title, text, confirmButtonText: "OK" }));
+        }
+
+        setStatus("error", text || title);
+        return null;
+      }
+
+      async function showRateLimitPopup(actionLabel, resetAtMs) {
+        const waitText = getRateLimitWaitText(resetAtMs);
+        await showPopup({
+          icon: "warning",
+          title: "Rate limited",
+          text: `Too many ${actionLabel}. Try again in ${waitText}.`,
+        });
+      }
+
+      function normalizeExternalUrl(value) {
+        const url = String(value || "").trim();
+        if (!url) return "";
+        return /^[a-z][a-z0-9+.-]*:\/\//i.test(url) ? url : `https://${url}`;
       }
 
       function setView(view) {
@@ -51,19 +92,29 @@
         step2.style.display = view === "app" ? "block" : "none";
       }
 
-      function setStats(joined, total) {
-        const remaining = Math.max(0, total - joined);
-        const percent = total ? Math.round((joined / total) * 100) : 0;
+      function setStats(joined, completed, total) {
+        const remaining = Math.max(0, total - completed);
+        const percent = total ? Math.round((completed / total) * 100) : 0;
 
         document.getElementById("joinedCount").textContent = String(joined);
-        document.getElementById("remainingCount").textContent =
-          String(remaining);
+        document.getElementById("remainingCount").textContent = String(remaining);
         document.getElementById("totalCount").textContent = String(total);
         document.getElementById("progressFill").style.width = `${percent}%`;
+        document.getElementById("completionMeta").textContent = `${completed} of ${total} fully complete (${percent}%)`;
       }
 
       async function readJson(response, fallback) {
         return response.json().catch(() => fallback);
+      }
+
+      function getRateLimitWaitText(resetAtMs) {
+        if (!resetAtMs) return "a few minutes";
+        const remainingMs = Math.max(0, resetAtMs - Date.now());
+        const totalSeconds = Math.ceil(remainingMs / 1000);
+        const mins = Math.floor(totalSeconds / 60);
+        const secs = totalSeconds % 60;
+        if (mins > 0) return `${mins}m ${secs}s`;
+        return `${secs}s`;
       }
 
       function setStatus(type, msg) {
@@ -89,17 +140,11 @@
 
         try {
           await navigator.clipboard.writeText(text);
-          setStatus(
-            "success",
-            "Copied error details. Send them to Dheeraj S on Slack.",
-          );
+          setStatus("success", "Copied! Paste it to Dheeraj S and we can debug this quickly.");
         } catch (_error) {
           supportMessage.focus();
           supportMessage.select();
-          setStatus(
-            "error",
-            "Copy failed automatically. Select the text and copy it manually.",
-          );
+          setStatus("error", "Auto-copy tripped. Select the text and copy it manually.");
         }
       }
 
@@ -115,10 +160,7 @@
           await navigator.clipboard.writeText(value);
           setStatus("success", successMessage);
         } catch (_error) {
-          setStatus(
-            "error",
-            "Could not copy automatically. Please copy manually.",
-          );
+          setStatus("error", "Clipboard said nope — please copy manually.");
         }
       }
 
@@ -132,6 +174,17 @@
 
       async function copyEmail() {
         await copyValue(currentEmail, "Email copied.");
+      }
+
+      async function detectAdminAccess() {
+        try {
+          const response = await apiGet("/api/admin/access");
+          if (!response.ok) return false;
+          const data = await readJson(response, { ok: false });
+          return !!data.ok;
+        } catch (_error) {
+          return false;
+        }
       }
 
       async function loadYswsList() {
@@ -148,20 +201,15 @@
             .filter((item) => item?.name && item?.form && item?.channel)
             .map((item) => ({
               name: String(item.name),
-              form: String(item.form),
+              form: normalizeExternalUrl(item.form),
               channel: String(item.channel),
-              description: String(
-                item.description || "No description added yet.",
-              ),
-              website: item.website ? String(item.website) : "",
+              description: String(item.description || "No description added yet."),
+              website: normalizeExternalUrl(item.website),
             }));
 
           return true;
         } catch (_error) {
-          setStatus(
-            "error",
-            "Could not load the YSWS list. Please refresh and try again.",
-          );
+          setStatus("error", "Couldn't load the YSWS list. Give it a refresh and we'll try again.");
           return false;
         }
       }
@@ -171,8 +219,7 @@
         if (!ysws) return;
 
         yswsModalTitle.textContent = ysws.name;
-        yswsModalDesc.textContent =
-          ysws.description || "No description added yet.";
+        yswsModalDesc.textContent = ysws.description || "No description added yet.";
 
         if (ysws.website) {
           yswsWebsiteBtn.style.display = "inline-flex";
@@ -197,11 +244,7 @@
       function clearOauthErrorFromUrl() {
         const nextUrl = new URL(window.location.href);
         nextUrl.searchParams.delete("oauth_error");
-        window.history.replaceState(
-          {},
-          "",
-          nextUrl.pathname + nextUrl.search + nextUrl.hash,
-        );
+        window.history.replaceState({}, "", nextUrl.pathname + nextUrl.search + nextUrl.hash);
       }
 
       function showLoggedOut(message = "") {
@@ -209,6 +252,7 @@
         document.getElementById("programs").innerHTML = "";
 
         latestMembership = {};
+        latestRsvpDone = {};
         currentSlackId = "";
         currentUsername = "";
         currentEmail = "";
@@ -226,9 +270,13 @@
         });
         usernameCopyBtn.style.display = "none";
         emailCopyBtn.style.display = "none";
+        adminLink.style.display = "none";
 
-        setStats(0, 0);
+        const searchInput = document.getElementById("searchYsws");
+        if (searchInput) searchInput.value = "";
+        currentSearchQuery = "";
 
+        setStats(0, 0, 0);
         setFilter("all");
         setStatus(message ? "error" : "", message);
       }
@@ -239,9 +287,7 @@
 
         const yswsReady = await loadYswsList();
         if (!yswsReady) {
-          showLoggedOut(
-            "Could not load the YSWS list. Please refresh and try again.",
-          );
+          showLoggedOut("Could not load the YSWS list. Please refresh and try again.");
           return;
         }
 
@@ -264,37 +310,36 @@
 
         const user = await readJson(userResponse, { ok: false });
         if (!user.ok) {
-          showLoggedOut(
-            user.error === "not_authenticated" ? "" : MEMBERSHIP_LOAD_ERROR,
-          );
+          showLoggedOut(user.error === "not_authenticated" ? "" : MEMBERSHIP_LOAD_ERROR);
           return;
         }
 
         setView("app");
         setSupportMessage("");
 
-        document.getElementById("hello").textContent =
-          `Hi ${user.name || "there"}!`;
+        document.getElementById("hello").textContent = `Hi ${user.name || "there"}!`;
         document.getElementById("avatar").src = user.avatar || DEFAULT_AVATAR;
 
-        currentSlackId = String(user.slackId || "")
-          .trim()
-          .toUpperCase();
+        currentSlackId = String(user.slackId || "").trim().toUpperCase();
         currentUsername = String(user.username || "").trim();
         currentEmail = String(user.email || "").trim();
+        isAdminUser = currentSlackId === ADMIN_SLACK_ID;
 
-        document.getElementById("slackIdText").textContent =
-          currentSlackId || "—";
-        document.getElementById("usernameText").textContent =
-          currentUsername || "—";
+        document.getElementById("slackIdText").textContent = currentSlackId || "—";
+        document.getElementById("usernameText").textContent = currentUsername || "—";
         document.getElementById("emailText").textContent = currentEmail || "—";
-        usernameCopyBtn.style.display = currentUsername
-          ? "inline-flex"
-          : "none";
+        usernameCopyBtn.style.display = currentUsername ? "inline-flex" : "none";
         emailCopyBtn.style.display = currentEmail ? "inline-flex" : "none";
         updateVerificationUi(user);
 
         latestMembership = user.membership || {};
+        latestRsvpDone = user.rsvpDone || {};
+
+        if (!isAdminUser) {
+          isAdminUser = await detectAdminAccess();
+        }
+        adminLink.style.display = isAdminUser ? "inline-flex" : "none";
+
         renderYsws();
       }
 
@@ -302,28 +347,16 @@
         const badge = document.getElementById("verificationBadge");
         const detail = document.getElementById("verificationDetail");
         const eligibility = document.getElementById("eligibilityDetail");
-        const isVerified =
-          typeof user?.isVerified === "boolean" ? user.isVerified : null;
-        const yswsEligible =
-          typeof user?.yswsEligible === "boolean" ? user.yswsEligible : null;
-        const label = String(
-          user?.verificationLabel || "Verification unknown",
-        ).trim();
-        const rawStatus = String(user?.verificationStatus || "")
-          .trim()
-          .replace(/[_-]+/g, " ");
+        const isVerified = typeof user?.isVerified === "boolean" ? user.isVerified : null;
+        const yswsEligible = typeof user?.yswsEligible === "boolean" ? user.yswsEligible : null;
+        const label = String(user?.verificationLabel || "Verification unknown").trim();
+        const rawStatus = String(user?.verificationStatus || "").trim().replace(/[_-]+/g, " ");
 
         badge.className = `verification-pill ${
-          isVerified === true
-            ? "verified"
-            : isVerified === false
-              ? "not-verified"
-              : "unknown"
+          isVerified === true ? "verified" : isVerified === false ? "not-verified" : "unknown"
         }`;
         badge.textContent = `Verification: ${label}`;
-        detail.textContent = rawStatus
-          ? `Status: ${rawStatus}`
-          : "Status: unavailable";
+        detail.textContent = rawStatus ? `Status: ${rawStatus}` : "Status: unavailable";
         eligibility.textContent =
           yswsEligible === true
             ? "YSWS eligibility: eligible"
@@ -335,16 +368,15 @@
       function setFilter(nextFilter) {
         currentFilter = nextFilter;
 
-        document
-          .getElementById("filterAll")
-          .classList.toggle("active", nextFilter === "all");
-        document
-          .getElementById("filterTodo")
-          .classList.toggle("active", nextFilter === "todo");
-        document
-          .getElementById("filterJoined")
-          .classList.toggle("active", nextFilter === "joined");
+        document.getElementById("filterAll").classList.toggle("active", nextFilter === "all");
+        document.getElementById("filterTodo").classList.toggle("active", nextFilter === "todo");
+        document.getElementById("filterJoined").classList.toggle("active", nextFilter === "joined");
 
+        renderYsws();
+      }
+
+      function setSearch(value) {
+        currentSearchQuery = String(value || "").trim().toLowerCase();
         renderYsws();
       }
 
@@ -356,39 +388,47 @@
           .map((item) => ({
             ...item,
             joined: !!latestMembership[item.channel],
+            rsvpDone: !!latestRsvpDone[item.channel],
           }))
           .filter((item) => {
             if (currentFilter === "joined") return item.joined;
             if (currentFilter === "todo") return !item.joined;
             return true;
           })
-          .sort(
-            (a, b) =>
-              Number(a.joined) - Number(b.joined) ||
-              a.name.localeCompare(b.name),
-          );
+          .filter((item) => {
+            if (!currentSearchQuery) return true;
+            return (
+              item.name.toLowerCase().includes(currentSearchQuery) ||
+              item.channel.toLowerCase().includes(currentSearchQuery)
+            );
+          })
+          .sort((a, b) => Number(a.joined) - Number(b.joined) || a.name.localeCompare(b.name));
 
-        const joinedCount = yswsList.filter(
-          (item) => latestMembership[item.channel],
+        const joinedCount = yswsList.filter((item) => latestMembership[item.channel]).length;
+        const completedCount = yswsList.filter(
+          (item) => latestMembership[item.channel] && latestRsvpDone[item.channel],
         ).length;
-        const total = yswsList.length;
-        setStats(joinedCount, total);
+        setStats(joinedCount, completedCount, yswsList.length);
 
         if (!rows.length) {
           const empty = document.createElement("div");
           empty.className = "card";
-          empty.innerHTML =
-            "<h3>Nothing here</h3><p class='muted'>Try a different filter.</p>";
+          empty.innerHTML = "<h3>Nothing here</h3><p class='muted'>No matches right now - try a different filter or search.</p>";
           yswsGrid.appendChild(empty);
           return;
         }
 
         rows.forEach((ysws) => {
           const card = document.createElement("div");
-          card.className = "card";
+          const isComplete = ysws.joined && ysws.rsvpDone;
+          const isPartial = ysws.joined || ysws.rsvpDone;
+          card.className = `card${isComplete ? " card-complete" : isPartial ? " card-partial" : ""}`;
 
           const cardHead = document.createElement("div");
           cardHead.className = "card-head";
+
+          const titleGroup = document.createElement("div");
+          titleGroup.className = "card-title-group";
 
           const title = document.createElement("h3");
           title.textContent = ysws.name;
@@ -397,21 +437,20 @@
           channelId.className = "channel-id";
           channelId.textContent = ysws.channel;
 
-          cardHead.append(title, channelId);
+          const rsvpToggle = document.createElement("button");
+          rsvpToggle.type = "button";
+          rsvpToggle.className = `rsvp-toggle${ysws.rsvpDone ? " is-checked" : ""}`;
+          rsvpToggle.setAttribute(
+            "aria-label",
+            ysws.rsvpDone ? `Unmark RSVP done for ${ysws.name}` : `Mark RSVP done for ${ysws.name}`,
+          );
+          rsvpToggle.title = ysws.rsvpDone ? "Undo RSVP done" : "Mark RSVP done";
+          rsvpToggle.addEventListener("click", () => toggleRsvpDone(ysws.channel, !ysws.rsvpDone, rsvpToggle, ysws.name));
 
-          const description = document.createElement("p");
-          description.className = "muted";
-          description.textContent =
-            "Join the Slack channel and complete your RSVP form.";
+          titleGroup.append(title, channelId);
+          cardHead.append(titleGroup, rsvpToggle);
 
-          card.append(cardHead, description);
-
-          if (ysws.joined) {
-            const badge = document.createElement("span");
-            badge.className = "badge";
-            badge.textContent = "Already in channel";
-            card.appendChild(badge);
-          }
+          card.appendChild(cardHead);
 
           const actions = document.createElement("div");
           actions.className = "actions";
@@ -423,24 +462,18 @@
             joinButton.textContent = "Joined";
           } else {
             joinButton.textContent = "Add me to channel";
-            joinButton.addEventListener("click", () =>
-              joinYsws(ysws.channel, joinButton, ysws.name),
-            );
+            joinButton.addEventListener("click", () => joinYsws(ysws.channel, joinButton, ysws.name));
           }
 
           const formButton = document.createElement("button");
           formButton.textContent = "Fill RSVP";
-          formButton.addEventListener("click", () =>
-            window.open(ysws.form, "_blank"),
-          );
+          formButton.addEventListener("click", () => window.open(ysws.form, "_blank"));
 
           const modalButton = document.createElement("button");
           modalButton.className = "joined description-btn";
           modalButton.type = "button";
           modalButton.textContent = "Description";
-          modalButton.addEventListener("click", () =>
-            openYswsModal(ysws.channel),
-          );
+          modalButton.addEventListener("click", () => openYswsModal(ysws.channel));
 
           actions.append(joinButton, formButton, modalButton);
           card.appendChild(actions);
@@ -448,26 +481,75 @@
         });
       }
 
-      async function joinYsws(channel, btn, yswsName) {
-        btn.innerText = "Joining...";
+      async function toggleRsvpDone(channel, done, btn, yswsName) {
         btn.disabled = true;
+        btn.classList.add("is-loading");
 
         let data = { ok: false };
+        let response;
 
         try {
-          const response = await apiPost("/api/join", { channel });
+          response = await apiPost("/api/rsvp", { channel, done });
           data = await response.json().catch(() => ({ ok: false }));
         } catch (_error) {
           data = { ok: false };
         }
 
-        if (!data.ok) {
-          btn.innerText = "Try again";
+        if (!response?.ok || !data.ok) {
           btn.disabled = false;
+          btn.classList.remove("is-loading");
+          const resetAtHeader = Number(response?.headers?.get("X-RateLimit-Reset") || 0);
+          const rateLimitMessage =
+            response?.status === 429
+              ? `Too many RSVP updates. Try again in ${getRateLimitWaitText(resetAtHeader)}.`
+              : "";
+          if (response?.status === 429) {
+            await showRateLimitPopup("RSVP updates", resetAtHeader);
+          }
           setStatus(
             "error",
-            data.message ||
-              `Could not add you to ${yswsName}. If this keeps happening, ask an organizer to add the bot to the channel.`,
+            rateLimitMessage ||
+              data.message ||
+              `Couldn't ${done ? "save" : "undo"} your RSVP completion for ${yswsName} right now.`,
+          );
+          return;
+        }
+
+        latestRsvpDone = data.rsvpDone || { ...latestRsvpDone, [channel]: done };
+        renderYsws();
+        setStatus("success", done ? `Marked ${yswsName} RSVP as done.` : `Removed the RSVP done mark for ${yswsName}.`);
+      }
+
+      async function joinYsws(channel, btn, yswsName) {
+        btn.innerText = "Joining channel...";
+        btn.disabled = true;
+
+        let data = { ok: false };
+        let response;
+
+        try {
+          response = await apiPost("/api/join", { channel });
+          data = await response.json().catch(() => ({ ok: false }));
+        } catch (_error) {
+          data = { ok: false };
+        }
+
+        if (!response?.ok || !data.ok) {
+          btn.innerText = "Try again";
+          btn.disabled = false;
+          const resetAtHeader = Number(response?.headers?.get("X-RateLimit-Reset") || 0);
+          const rateLimitMessage =
+            response?.status === 429
+              ? `Too many requests. Try again in ${getRateLimitWaitText(resetAtHeader)}.`
+              : "";
+          if (response?.status === 429) {
+            await showRateLimitPopup("join requests", resetAtHeader);
+          }
+          setStatus(
+            "error",
+            rateLimitMessage ||
+              data.message ||
+              `Couldn't add you to ${yswsName} right now. If this keeps happening, ask an organizer to add the bot to the channel.`,
           );
           return;
         }
@@ -483,9 +565,7 @@
 
         const oauthError = getQueryParam("oauth_error");
         if (oauthError) {
-          showLoggedOut(
-            "HC login failed. If this keeps happening, send the details below to Dheeraj S.",
-          );
+          showLoggedOut("HC login failed. If this keeps happening, send the details below to Dheeraj S.");
           setSupportMessage(decodeURIComponent(oauthError));
           clearOauthErrorFromUrl();
           return;
@@ -502,5 +582,6 @@
       window.copyEmail = copyEmail;
       window.openYswsModal = openYswsModal;
       window.closeYswsModal = closeYswsModal;
+      window.setSearch = setSearch;
 
       boot();

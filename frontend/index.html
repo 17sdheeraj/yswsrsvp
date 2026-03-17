@@ -18,6 +18,10 @@
       rel="stylesheet"
     />
 
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"
+    />
     <link rel="stylesheet" href="./styles.css" />
   </head>
 
@@ -36,7 +40,7 @@
       <div id="step1" class="section">
         <div class="auth-shell">
           <div class="auth-panel">
-            <p class="pill" style="width: max-content">Secure HC sign-in</p>
+            <p class="pill" style="width: max-content">Secure HCA signin</p>
 
             <h2 class="auth-title">Login with HC Auth to continue</h2>
 
@@ -57,7 +61,7 @@
               </a>
             </div>
 
-            <div id="statusBox" class="status"></div>
+            <div id="statusBox" class="status" aria-live="polite"></div>
 
             <div id="supportBox" class="support-box">
               <p class="muted" style="margin: 0">
@@ -131,7 +135,7 @@
       <div id="loading" class="loading" style="display: none">
         <div class="spinner"></div>
 
-        <p>Checking channel memberships...</p>
+        <p>Checking channel memberships... we might be summoning slack elves for this.</p>
       </div>
 
       <div id="programModal" class="modal" onclick="closeYswsModal(event)">
@@ -160,6 +164,7 @@
                 <button
                   class="slack-id-text tap-copy"
                   type="button"
+                  aria-label="Copy Slack ID"
                   onclick="copySlackId()"
                 >
                   Slack ID: <strong id="slackIdText">—</strong>
@@ -169,6 +174,7 @@
                   class="slack-id-text tap-copy"
                   type="button"
                   style="display: none"
+                  aria-label="Copy Slack username"
                   onclick="copyUsername()"
                 >
                   Username: <strong id="usernameText">—</strong>
@@ -178,6 +184,7 @@
                   class="slack-id-text tap-copy"
                   type="button"
                   style="display: none"
+                  aria-label="Copy email"
                   onclick="copyEmail()"
                 >
                   Email: <strong id="emailText">—</strong>
@@ -200,14 +207,11 @@
             </div>
           </div>
 
-          <a id="logoutBtn" class="button-link joined" href="#"
-            >Change account</a
-          >
+          <div class="top-bar-actions">
+            <a id="logoutBtn" class="button-link joined" href="#" aria-label="Log out and switch account">Change account</a>
+            <a id="adminLink" class="button-link joined" href="./admin.html" style="display: none" aria-label="Open admin dashboard">Admin Dashboard</a>
+          </div>
         </div>
-
-        <p class="muted" style="margin: 0 0 18px">
-          First join the Slack channel, then fill the RSVP form.
-        </p>
 
         <div class="dashboard">
           <div>
@@ -228,6 +232,7 @@
 
             <div class="progress-wrap" style="margin-top: 10px">
               <p class="stat-label" style="margin: 0">Completion</p>
+              <p id="completionMeta" class="progress-meta">Complete a YSWS by joining the channel and filling the RSVP.</p>
               <div class="progress-bar">
                 <div id="progressFill" class="progress-fill"></div>
               </div>
@@ -235,6 +240,16 @@
           </div>
 
           <div class="filters">
+            <label class="sr-only" for="searchYsws">Search YSWS</label>
+            <input
+              id="searchYsws"
+              class="search-input"
+              type="search"
+              placeholder="Search by YSWS or channel"
+              oninput="setSearch(this.value)"
+              autocomplete="off"
+              spellcheck="false"
+            />
             <button
               id="filterAll"
               class="chip active"
@@ -300,6 +315,7 @@
       </footer>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="./script.js"></script>
   </body>
 </html>

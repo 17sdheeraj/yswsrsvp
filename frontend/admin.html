@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin · YSWS RSVP</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <meta name="robots" content="noindex, nofollow" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="admin-nav">
+        <a href="./index.html" class="back-link">← Back to RSVP</a>
+      </div>
+
+      <div id="adminNoAccess" class="admin-no-access" style="display: none"></div>
+
+      <div id="viewAsModal" class="view-as-modal" style="display: none">
+        <div class="view-as-modal-header">
+          <button id="closeViewAsBtn" class="button-link">← Back</button>
+          <div id="viewAsModalStatus" class="status" aria-live="polite"></div>
+        </div>
+        <div id="viewAsModalContent" class="view-as-modal-content"></div>
+      </div>
+
+      <div id="adminPanel" class="admin-panel" style="display: none">
+        <div class="admin-head">
+          <div>
+            <h2>Admin dashboard</h2>
+            <p id="adminRetentionNote" class="admin-retention-note"></p>
+          </div>
+          <div class="admin-actions">
+            <button id="refreshAdminBtn" class="button-link joined">Refresh</button>
+          </div>
+        </div>
+
+        <div id="adminStatus" class="status" aria-live="polite"></div>
+
+        <div class="admin-grid">
+          <div class="admin-card">
+            <p class="muted">Auth success rate</p>
+            <p id="adminAuthRate" class="admin-value">—</p>
+            <p id="adminAuthMeta" class="audit-meta"></p>
+          </div>
+          <div class="admin-card">
+            <p class="muted">Join success rate</p>
+            <p id="adminJoinRate" class="admin-value">—</p>
+            <p id="adminJoinMeta" class="audit-meta"></p>
+          </div>
+          <div class="admin-card">
+            <p class="muted">Total errors</p>
+            <p id="adminErrorCount" class="admin-value">—</p>
+            <p id="adminRateLimitMeta" class="audit-meta"></p>
+            <p id="adminRsvpRateLimitMeta" class="audit-meta"></p>
+          </div>
+        </div>
+
+        <div class="admin-grid admin-grid-detail">
+          <div class="admin-card">
+            <div class="audit-header">
+              <div>
+                <p class="muted">
+                  Recent events
+                  <span id="adminAuditMeta"></span>
+                </p>
+              </div>
+              <button id="clearAuditBtn" class="button-link">Clear all</button>
+            </div>
+            <div id="adminAuditList" class="audit-list"></div>
+            <div id="auditPagination" class="pagination"></div>
+          </div>
+          <div class="admin-card">
+            <div class="audit-header">
+              <p class="muted">Errors by code</p>
+              <button id="clearErrorsBtn" class="button-link">Clear all</button>
+            </div>
+            <div id="adminErrorCodes" class="error-code-list"></div>
+          </div>
+        </div>
+
+        <div class="admin-test-section">
+          <p class="muted">Testing tools</p>
+
+          <div class="admin-test-grid">
+            <div class="admin-card">
+              <p class="muted">View as user</p>
+              <p class="admin-test-desc">
+                Look at the dashboard exactly like a user would see it.
+              </p>
+              <div class="admin-test-row">
+                <input
+                  id="viewAsSlackIdInput"
+                  type="text"
+                  placeholder="Slack user ID (e.g. U0828RTU7FE)"
+                  class="admin-input"
+                  autocomplete="off"
+                  spellcheck="false"
+                />
+                <button id="viewAsBtn" class="button-link joined">View as</button>
+              </div>
+              <div id="viewAsResult" class="admin-test-result"></div>
+            </div>
+
+            <div class="admin-card">
+              <p class="muted">Look up user</p>
+              <p class="admin-test-desc">
+                Check Slack profile + memberships for any user ID.
+              </p>
+              <div class="admin-test-row">
+                <input
+                  id="lookupSlackIdInput"
+                  type="text"
+                  placeholder="Slack user ID (e.g. U0828RTU7FE)"
+                  class="admin-input"
+                  autocomplete="off"
+                  spellcheck="false"
+                />
+                <button id="lookupBtn" class="button-link joined">Look up</button>
+              </div>
+              <div id="lookupResult" class="admin-test-result"></div>
+            </div>
+
+            <div class="admin-card">
+              <p class="muted">Force join channel</p>
+              <p class="admin-test-desc">
+                Invite users to selected channels for testing the join flow.
+              </p>
+              <div class="admin-test-row">
+                <input
+                  id="testJoinSlackIdInput"
+                  type="text"
+                  placeholder="Slack user ID"
+                  class="admin-input"
+                  autocomplete="off"
+                  spellcheck="false"
+                />
+                <select id="testJoinChannelSelect" class="admin-input admin-select" multiple size="5"></select>
+                <p class="admin-select-hint">Hold Ctrl/Cmd to select multiple channels.</p>
+                <div class="admin-select-actions">
+                  <button id="selectAllChannelsBtn" class="button-link joined" type="button">Select all</button>
+                  <button id="clearChannelsBtn" class="button-link joined" type="button">Clear</button>
+                </div>
+                <button id="testJoinBtn" class="button-link joined">Join</button>
+              </div>
+              <div id="testJoinResult" class="admin-test-result"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="./admin.js"></script>
+  </body>
+</html>

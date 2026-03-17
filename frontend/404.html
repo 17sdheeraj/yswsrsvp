@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>404 Not found</title>
+    <style>
+      :root {
+        --hc-red: #ec3750;
+        --hc-orange: #ff8c37;
+        --hc-cyan: #5bc0de;
+        --hc-border: #334155;
+        --hc-text: #f8fafc;
+        --hc-muted: #9aa9bc;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        color: var(--hc-text);
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background:
+          radial-gradient(900px 450px at 0% -20%, #ec375033 0%, transparent 70%),
+          radial-gradient(850px 450px at 100% 120%, #338eda33 0%, transparent 70%),
+          linear-gradient(150deg, #120b12, #0f172a 50%, #18122b 100%);
+      }
+
+      .shell {
+        width: min(680px, 100%);
+        border: 1px solid var(--hc-border);
+        border-radius: 22px;
+        padding: 28px;
+        background: linear-gradient(180deg, #172033e6, #111827d9);
+        box-shadow: 0 20px 60px #00000055;
+      }
+
+      .code {
+        margin: 0;
+        font-size: clamp(58px, 13vw, 110px);
+        line-height: 0.9;
+        letter-spacing: -0.04em;
+        background: linear-gradient(120deg, var(--hc-orange), var(--hc-red), var(--hc-cyan));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      .title {
+        margin: 8px 0 0;
+        font-size: clamp(24px, 5vw, 34px);
+        letter-spacing: -0.02em;
+      }
+
+      .copy {
+        margin: 10px 0 18px;
+        color: var(--hc-muted);
+        line-height: 1.6;
+      }
+
+      .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .btn {
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border-radius: 12px;
+        padding: 11px 16px;
+        font-weight: 600;
+        font-size: 14px;
+      }
+
+      .btn.primary {
+        background: linear-gradient(135deg, var(--hc-red), var(--hc-orange));
+        color: var(--hc-text);
+        border: 0;
+      }
+
+      .btn.secondary {
+        background: #1f2937;
+        border: 1px solid var(--hc-border);
+        color: #cbd5e1;
+      }
+
+      .tip {
+        margin: 16px 0 0;
+        font-size: 12px;
+        color: var(--hc-muted);
+      }
+
+      .btn:focus-visible {
+        outline: 2px solid var(--hc-cyan);
+        outline-offset: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <p class="code">404</p>
+      <h1 class="title">You wandered off</h1>
+      <p class="copy">
+        That link doesn’t exist here. Head back to the main page and continue where you left off.
+      </p>
+      <div class="actions">
+        <a class="btn primary" href="./index.html">Go to Main page</a>
+        <a class="btn secondary" href="./admin.html" target="_blank" rel="noreferrer">Admin Portal</a>
+      </div>
+      <p class="tip">If you typed the URL manually, double-check for typos.</p>
+    </main>
+  </body>
+</html>
