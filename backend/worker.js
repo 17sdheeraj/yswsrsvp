@@ -53,6 +53,7 @@ export default {
       .split(",")
       .map((item) => normalizeOrigin(item))
       .filter(Boolean);
+    const primaryFrontendOrigin = allowedOrigins[0] || "";
     const isAllowedOrigin =
       requestOrigin && allowedOrigins.includes(requestOrigin);
     const runtimeState = getRuntimeState();
@@ -982,7 +983,7 @@ export default {
           recordEvent("auth_callback", "failure", {
             code: "oauth_state_invalid",
           });
-          const target = allowedOrigin || "/";
+          const target = primaryFrontendOrigin || "/";
           return new Response(null, {
             status: 302,
             headers: {
@@ -1007,7 +1008,7 @@ export default {
             code: "oauth_token_exchange_failed",
             details: tokenData.error || "token_exchange_failed",
           });
-          const target = allowedOrigin || "/";
+          const target = primaryFrontendOrigin || "/";
           return new Response(null, {
             status: 302,
             headers: {
@@ -1025,7 +1026,7 @@ export default {
             code: "hc_profile_fetch_failed",
             status: me.status,
           });
-          const target = allowedOrigin || "/";
+          const target = primaryFrontendOrigin || "/";
           return new Response(null, {
             status: 302,
             headers: {
@@ -1041,7 +1042,7 @@ export default {
           slackId: profile.slackId || "unknown",
         });
 
-        const headers = new Headers({ Location: allowedOrigin || "/" });
+        const headers = new Headers({ Location: primaryFrontendOrigin || "/" });
         headers.append("Set-Cookie", serializeCookie("hcOauthState", "", 0));
         headers.append(
           "Set-Cookie",
@@ -1080,7 +1081,7 @@ export default {
       }
 
       case "/auth/logout": {
-        const headers = new Headers({ Location: allowedOrigin || "/" });
+        const headers = new Headers({ Location: primaryFrontendOrigin || "/" });
         [
           "hcAccessToken",
           "hcRefreshToken",
