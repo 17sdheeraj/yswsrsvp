@@ -38,8 +38,23 @@ function getRuntimeState() {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
-    const origin = request.headers.get("Origin") || "";
-    const allowedOrigin = (env.FRONTEND_ORIGIN || "").trim();
+    const requestOriginHeader = request.headers.get("Origin") || "";
+    const normalizeOrigin = (value) => {
+      const input = String(value || "").trim();
+      if (!input) return "";
+      try {
+        return new URL(input).origin;
+      } catch {
+        return input.replace(/\/+$/, "");
+      }
+    };
+    const requestOrigin = normalizeOrigin(requestOriginHeader);
+    const allowedOrigins = String(env.FRONTEND_ORIGIN || "")
+      .split(",")
+      .map((item) => normalizeOrigin(item))
+      .filter(Boolean);
+    const isAllowedOrigin =
+      requestOrigin && allowedOrigins.includes(requestOrigin);
     const runtimeState = getRuntimeState();
     const kv = env.YSWS && typeof env.YSWS.get === "function" ? env.YSWS : null;
     const allowedChannels = new Set(
@@ -47,7 +62,6 @@ export default {
     );
 
     const corsHeaders = {
-      "Access-Control-Allow-Origin": allowedOrigin,
       "Access-Control-Allow-Credentials": "true",
       "Access-Control-Allow-Methods": "GET,POST,DELETE,OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type",
@@ -56,7 +70,8 @@ export default {
 
     function withCors(response) {
       const headers = new Headers(response.headers);
-      if (allowedOrigin && origin === allowedOrigin) {
+      if (isAllowedOrigin) {
+        headers.set("Access-Control-Allow-Origin", requestOrigin);
         for (const [k, v] of Object.entries(corsHeaders)) headers.set(k, v);
       }
       return new Response(response.body, {
@@ -451,7 +466,12 @@ export default {
     if (request.method === "OPTIONS") {
       return new Response(null, {
         status: 204,
-        headers: allowedOrigin ? corsHeaders : {},
+        headers: isAllowedOrigin
+          ? {
+              "Access-Control-Allow-Origin": requestOrigin,
+              ...corsHeaders,
+            }
+          : {},
       });
     }
 
