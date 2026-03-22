@@ -138,5 +138,19 @@
     "channel": "C0AMB6NA7PX",
     "description": "Ship a project, guide others, and earn prizes!",
     "website": ""
+  },
+  {
+    "name": "hackAI",
+    "form": "https://forms.fillout.com/t/hgZBPbzkndus",
+    "channel": "C0AMZJXFH29",
+    "description": "Create AI-Powered Real-World Application using LLM APIs (this is madatory)\nAnd get AI CREDITS for ai models",
+    "website": "https://hc-hack-ai.vercel.app/"
+  },
+  {
+    "name": "Tabbed",
+    "form": "https://tabbed.fillout.com/rsvp",
+    "channel": "C0ALJT4J7V0",
+    "description": "YOU SHIP: A project that is usable only with a keyboard. NO TAB KEY. NO MOUSE.\nWE SHIP: Keyboard grants and prebuilt keyboards.:",
+    "website": "https://tabbed.dino.icu/"
   }
 ]
