@@ -1,13 +1,42 @@
       const API_BASE =
         window.__API_BASE__ || "https://ysws-rsvp-hca.sdheeraj.workers.dev";
       const NO_ACCESS_URL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+      const SESSION_TOKEN_STORAGE_KEY = "ysws_session_token";
 
       function api(path) {
         return `${API_BASE}${path}`;
       }
 
+      function getSessionToken() {
+        const token = String(localStorage.getItem(SESSION_TOKEN_STORAGE_KEY) || "").trim();
+        if (!token) return "";
+        if (!/^[a-f0-9]{32,128}$/i.test(token)) {
+          localStorage.removeItem(SESSION_TOKEN_STORAGE_KEY);
+          return "";
+        }
+        return token;
+      }
+
+      function getAuthHeaders() {
+        const token = getSessionToken();
+        return token ? { Authorization: `Bearer ${token}` } : {};
+      }
+
+      async function apiFetch(path, init = {}) {
+        const baseHeaders = getAuthHeaders();
+        const nextHeaders = {
+          ...baseHeaders,
+          ...(init.headers || {}),
+        };
+        return fetch(api(path), {
+          ...init,
+          credentials: "include",
+          headers: nextHeaders,
+        });
+      }
+
       async function apiGet(path) {
-        return fetch(api(path), { credentials: "include" });
+        return apiFetch(path);
       }
 
       async function readJson(response, fallback) {
@@ -367,9 +396,8 @@
         setStatus("", "");
 
         try {
-          const response = await fetch(api("/api/admin/audit"), {
+          const response = await apiFetch("/api/admin/audit", {
             method: "DELETE",
-            credentials: "include",
           });
           const data = await readJson(response, { ok: false });
 
@@ -392,9 +420,8 @@
         setStatus("", "");
 
         try {
-          const response = await fetch(api(`/api/admin/audit?id=${encodeURIComponent(eventId)}`), {
+          const response = await apiFetch(`/api/admin/audit?id=${encodeURIComponent(eventId)}`, {
             method: "DELETE",
-            credentials: "include",
           });
           const data = await readJson(response, { ok: false });
 
@@ -424,9 +451,8 @@
         setStatus("", "");
 
         try {
-          const response = await fetch(api("/api/admin/errors"), {
+          const response = await apiFetch("/api/admin/errors", {
             method: "DELETE",
-            credentials: "include",
           });
           const data = await readJson(response, { ok: false });
 
@@ -618,9 +644,8 @@
               loadingText: "Joining...",
               selector: `.view-as-join-btn[data-channel="${channel}"]`,
               onConfirm: async () => {
-                const response = await fetch(api("/api/admin/test-join"), {
+                const response = await apiFetch("/api/admin/test-join", {
                   method: "POST",
-                  credentials: "include",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ slackId: data.slackId, channel }),
                 });
@@ -651,9 +676,8 @@
               loadingText: done ? "Saving..." : "Undoing...",
               selector: `.view-as-rsvp-btn[data-channel="${channel}"]`,
               onConfirm: async () => {
-                const response = await fetch(api("/api/admin/test-rsvp"), {
+                const response = await apiFetch("/api/admin/test-rsvp", {
                   method: "POST",
-                  credentials: "include",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ slackId: data.slackId, channel, done }),
                 });
@@ -822,9 +846,8 @@
         const results = [];
         for (const channel of channels) {
           try {
-            const response = await fetch(api("/api/admin/test-join"), {
+            const response = await apiFetch("/api/admin/test-join", {
               method: "POST",
-              credentials: "include",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ slackId, channel }),
             });

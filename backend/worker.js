@@ -16,6 +16,9 @@ const KV_AUDIT_KEY = "ops:audit:v1";
 const KV_JOIN_RATE_LIMIT_PREFIX = "ops:rate-limit:join:";
 const KV_RSVP_RATE_LIMIT_PREFIX = "ops:rate-limit:rsvp:";
 const KV_RSVP_DONE_PREFIX = "ops:rsvp:done:";
+const KV_SESSION_PREFIX = "ops:session:v1:";
+const SESSION_TOKEN_TTL_SECONDS = 60 * 60 * 12;
+const SESSION_TOKEN_MAX_AGE_MS = SESSION_TOKEN_TTL_SECONDS * 1000;
 
 function getRuntimeState() {
   if (!globalThis.__YSWS_RSVP_RUNTIME__) {
@@ -65,7 +68,7 @@ export default {
     const corsHeaders = {
       "Access-Control-Allow-Credentials": "true",
       "Access-Control-Allow-Methods": "GET,POST,DELETE,OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
       Vary: "Origin",
     };
 
@@ -121,6 +124,73 @@ export default {
         await kv.put(key, JSON.stringify(value), options);
       } catch {
       }
+    }
+
+    function parseBearerSessionToken(req) {
+      const authHeader = String(req.headers.get("Authorization") || "").trim();
+      if (!authHeader.toLowerCase().startsWith("bearer ")) return "";
+      return authHeader.slice(7).trim();
+    }
+
+    function getSessionFingerprint(req) {
+      const userAgent = String(req.headers.get("User-Agent") || "")
+        .trim()
+        .toLowerCase()
+        .slice(0, 180);
+      const language = String(req.headers.get("Accept-Language") || "")
+        .split(",")[0]
+        .trim()
+        .toLowerCase()
+        .slice(0, 32);
+      return `${userAgent}|${language}`;
+    }
+
+    function getSessionKey(token) {
+      return `${KV_SESSION_PREFIX}${token}`;
+    }
+
+    async function writeSessionToken(token, payload, req) {
+      if (!kv || !token || !payload?.accessToken) return;
+      await writeKvJson(getSessionKey(token), {
+        accessToken: payload.accessToken,
+        slackId: normalizeSlackId(payload.slackId || ""),
+        fingerprint: getSessionFingerprint(req),
+        issuedAt: Date.now(),
+      }, {
+        expirationTtl: SESSION_TOKEN_TTL_SECONDS,
+      });
+    }
+
+    async function deleteSessionToken(token) {
+      if (!kv || !token) return;
+      try {
+        await kv.delete(getSessionKey(token));
+      } catch {
+      }
+    }
+
+    async function readSessionToken(token, req) {
+      if (!kv || !token) return null;
+      const data = await readKvJson(getSessionKey(token), null);
+      if (!data || typeof data !== "object") return null;
+      const accessToken = String(data.accessToken || "").trim();
+      if (!accessToken) return null;
+      const issuedAt = Number(data.issuedAt || 0);
+      const storedFingerprint = String(data.fingerprint || "");
+      const currentFingerprint = getSessionFingerprint(req);
+      const isExpired = !issuedAt || Date.now() - issuedAt > SESSION_TOKEN_MAX_AGE_MS;
+      const fingerprintMismatch =
+        Boolean(storedFingerprint) && storedFingerprint !== currentFingerprint;
+
+      if (isExpired || fingerprintMismatch) {
+        await deleteSessionToken(token);
+        return null;
+      }
+
+      return {
+        accessToken,
+        slackId: normalizeSlackId(data.slackId || ""),
+      };
     }
 
     function getRsvpDoneKey(slackId) {
@@ -512,6 +582,18 @@ export default {
       return `${url.origin}/auth/callback`;
     }
 
+    function buildFrontendLocation(extraParams = {}) {
+      const target = primaryFrontendOrigin || "/";
+      const redirectUrl = new URL(target, url.origin);
+
+      for (const [key, value] of Object.entries(extraParams)) {
+        if (value == null || value === "") continue;
+        redirectUrl.searchParams.set(key, String(value));
+      }
+
+      return redirectUrl.toString();
+    }
+
     function randomState() {
       const bytes = new Uint8Array(16);
       crypto.getRandomValues(bytes);
@@ -870,7 +952,19 @@ export default {
 
     async function getSessionProfile(req) {
       const cookies = parseCookies(req);
-      const accessToken = (cookies.hcAccessToken || "").trim();
+      let accessToken = (cookies.hcAccessToken || "").trim();
+      let fallbackSlackId = normalizeSlackId(cookies.hcSlackId || "");
+
+      if (!accessToken) {
+        const bearerToken = parseBearerSessionToken(req);
+        const sessionFromToken = await readSessionToken(bearerToken, req);
+        if (sessionFromToken?.accessToken) {
+          accessToken = sessionFromToken.accessToken;
+          fallbackSlackId = normalizeSlackId(
+            sessionFromToken.slackId || fallbackSlackId,
+          );
+        }
+      }
 
       if (!accessToken) {
         return {
@@ -898,7 +992,10 @@ export default {
         cookies,
         accessToken,
         me,
-        profile: parseHCProfile(me.data || {}, cookies),
+        profile: parseHCProfile(me.data || {}, {
+          ...cookies,
+          hcSlackId: fallbackSlackId || cookies.hcSlackId || "",
+        }),
       };
     }
 
@@ -983,11 +1080,13 @@ export default {
           recordEvent("auth_callback", "failure", {
             code: "oauth_state_invalid",
           });
-          const target = primaryFrontendOrigin || "/";
+          const target = buildFrontendLocation({
+            oauth_error: "Hack Club Auth verification failed",
+          });
           return new Response(null, {
             status: 302,
             headers: {
-              Location: `${target}?oauth_error=${encodeURIComponent("Hack Club Auth verification failed")}`,
+              Location: target,
               "Set-Cookie": serializeCookie("hcOauthState", "", 0),
             },
           });
@@ -1008,11 +1107,13 @@ export default {
             code: "oauth_token_exchange_failed",
             details: tokenData.error || "token_exchange_failed",
           });
-          const target = primaryFrontendOrigin || "/";
+          const target = buildFrontendLocation({
+            oauth_error: tokenData.error || "Token exchange failed",
+          });
           return new Response(null, {
             status: 302,
             headers: {
-              Location: `${target}?oauth_error=${encodeURIComponent(tokenData.error || "Token exchange failed")}`,
+              Location: target,
               "Set-Cookie": serializeCookie("hcOauthState", "", 0),
             },
           });
@@ -1026,11 +1127,13 @@ export default {
             code: "hc_profile_fetch_failed",
             status: me.status,
           });
-          const target = primaryFrontendOrigin || "/";
+          const target = buildFrontendLocation({
+            oauth_error: "Could not load your Hack Club profile",
+          });
           return new Response(null, {
             status: 302,
             headers: {
-              Location: `${target}?oauth_error=${encodeURIComponent("Could not load your Hack Club profile")}`,
+              Location: target,
               "Set-Cookie": serializeCookie("hcOauthState", "", 0),
             },
           });
@@ -1042,7 +1145,21 @@ export default {
           slackId: profile.slackId || "unknown",
         });
 
-        const headers = new Headers({ Location: primaryFrontendOrigin || "/" });
+        let sessionToken = "";
+        if (kv) {
+          sessionToken = crypto.randomUUID().replace(/-/g, "");
+          await writeSessionToken(sessionToken, {
+            accessToken: tokenData.access_token,
+            slackId: profile.slackId,
+          }, request);
+        }
+
+        const headers = new Headers({
+          Location: buildFrontendLocation({
+            auth_attempted: "1",
+            ...(sessionToken ? { session_token: sessionToken } : {}),
+          }),
+        });
         headers.append("Set-Cookie", serializeCookie("hcOauthState", "", 0));
         headers.append(
           "Set-Cookie",
@@ -1081,7 +1198,10 @@ export default {
       }
 
       case "/auth/logout": {
-        const headers = new Headers({ Location: primaryFrontendOrigin || "/" });
+        const bearerToken = parseBearerSessionToken(request);
+        await deleteSessionToken(bearerToken);
+
+        const headers = new Headers({ Location: buildFrontendLocation() });
         [
           "hcAccessToken",
           "hcRefreshToken",

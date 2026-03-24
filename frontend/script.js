@@ -5,6 +5,9 @@
         "https://user-cdn.hackclub-assets.com/019cf11f-eade-7304-ab15-71833ccc4c32/icon-rounded.svg";
       const MEMBERSHIP_LOAD_ERROR =
         "Couldn't load your memberships right now. Slack might be on a coffee break, try again in a bit.";
+      const LOGIN_SESSION_ERROR =
+        "Login completed, but your browser blocked the session cookie. Allow third-party cookies for this site or try a different browser, then log in again.";
+      const SESSION_TOKEN_STORAGE_KEY = "ysws_session_token";
 
       let yswsList = [];
       let latestMembership = {};
@@ -31,15 +34,48 @@
         return `${API_BASE}${path}`;
       }
 
+      function getSessionToken() {
+        const token = String(localStorage.getItem(SESSION_TOKEN_STORAGE_KEY) || "").trim();
+        if (!token) return "";
+        if (!/^[a-f0-9]{32,128}$/i.test(token)) {
+          clearSessionToken();
+          return "";
+        }
+        return token;
+      }
+
+      function setSessionToken(token) {
+        const next = String(token || "").trim();
+        if (!next) return;
+        localStorage.setItem(SESSION_TOKEN_STORAGE_KEY, next);
+      }
+
+      function clearSessionToken() {
+        localStorage.removeItem(SESSION_TOKEN_STORAGE_KEY);
+      }
+
+      function getAuthHeaders() {
+        const token = getSessionToken();
+        return token ? { Authorization: `Bearer ${token}` } : {};
+      }
+
       async function apiGet(path) {
-        return fetch(api(path), { credentials: "include" });
+        return fetch(api(path), {
+          credentials: "include",
+          headers: {
+            ...getAuthHeaders(),
+          },
+        });
       }
 
       async function apiPost(path, body) {
         return fetch(api(path), {
           method: "POST",
           credentials: "include",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeaders(),
+          },
           body: JSON.stringify(body),
         });
       }
@@ -247,6 +283,22 @@
         window.history.replaceState({}, "", nextUrl.pathname + nextUrl.search + nextUrl.hash);
       }
 
+      function clearAuthAttemptFromUrl() {
+        const nextUrl = new URL(window.location.href);
+        nextUrl.searchParams.delete("auth_attempted");
+        window.history.replaceState({}, "", nextUrl.pathname + nextUrl.search + nextUrl.hash);
+      }
+
+      function consumeSessionTokenFromUrl() {
+        const nextUrl = new URL(window.location.href);
+        const sessionToken = String(nextUrl.searchParams.get("session_token") || "").trim();
+        if (!sessionToken) return false;
+        setSessionToken(sessionToken);
+        nextUrl.searchParams.delete("session_token");
+        window.history.replaceState({}, "", nextUrl.pathname + nextUrl.search + nextUrl.hash);
+        return true;
+      }
+
       function showLoggedOut(message = "") {
         setView("auth");
         document.getElementById("programs").innerHTML = "";
@@ -281,7 +333,7 @@
         setStatus(message ? "error" : "", message);
       }
 
-      async function loadDashboard() {
+      async function loadDashboard({ authAttempted = false } = {}) {
         setView("loading");
         setStatus("", "");
 
@@ -302,7 +354,9 @@
         if (!userResponse.ok) {
           showLoggedOut(
             userResponse.status === 401 || userResponse.status === 403
-              ? ""
+              ? authAttempted
+                ? LOGIN_SESSION_ERROR
+                : ""
               : MEMBERSHIP_LOAD_ERROR,
           );
           return;
@@ -310,7 +364,13 @@
 
         const user = await readJson(userResponse, { ok: false });
         if (!user.ok) {
-          showLoggedOut(user.error === "not_authenticated" ? "" : MEMBERSHIP_LOAD_ERROR);
+          showLoggedOut(
+            user.error === "not_authenticated"
+              ? authAttempted
+                ? LOGIN_SESSION_ERROR
+                : ""
+              : MEMBERSHIP_LOAD_ERROR,
+          );
           return;
         }
 
@@ -562,6 +622,13 @@
       async function boot() {
         document.getElementById("loginBtn").href = api("/auth/start");
         document.getElementById("logoutBtn").href = api("/auth/logout");
+        document.getElementById("logoutBtn").addEventListener("click", clearSessionToken);
+
+        consumeSessionTokenFromUrl();
+        const authAttempted = getQueryParam("auth_attempted") === "1";
+        if (authAttempted) {
+          clearAuthAttemptFromUrl();
+        }
 
         const oauthError = getQueryParam("oauth_error");
         if (oauthError) {
@@ -572,7 +639,7 @@
         }
 
         setSupportMessage("");
-        await loadDashboard();
+        await loadDashboard({ authAttempted });
       }
 
       window.setFilter = setFilter;
