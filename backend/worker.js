@@ -1,26 +1,26 @@
 import YSWS_LIST from "./public/ysws.json";
 
-const HC_AUTH_BASE = "https://auth.hackclub.com";
-const HC_OAUTH_SCOPE = "openid profile email name slack_id verification_status";
-const PUBLIC_COOKIE_KEYS = ["hcName", "hcEmail", "hcAvatar"];
-const ADMIN_SLACK_ID = "U0828RTU7FE";
-const MAX_AUDIT_EVENTS = 100;
-const AUDIT_RETENTION_DAYS = 14;
-const AUDIT_RETENTION_MS = AUDIT_RETENTION_DAYS * 24 * 60 * 60 * 1000;
-const JOIN_RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
-const JOIN_RATE_LIMIT_MAX_REQUESTS = 8;
-const RSVP_RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
-const RSVP_RATE_LIMIT_MAX_REQUESTS = 12;
-const KV_METRICS_KEY = "ops:metrics:v1";
-const KV_AUDIT_KEY = "ops:audit:v1";
-const KV_JOIN_RATE_LIMIT_PREFIX = "ops:rate-limit:join:";
-const KV_RSVP_RATE_LIMIT_PREFIX = "ops:rate-limit:rsvp:";
-const KV_RSVP_DONE_PREFIX = "ops:rsvp:done:";
-const KV_SESSION_PREFIX = "ops:session:v1:";
-const SESSION_TOKEN_TTL_SECONDS = 60 * 60 * 12;
-const SESSION_TOKEN_MAX_AGE_MS = SESSION_TOKEN_TTL_SECONDS * 1000;
+const hcauthbase = "https://auth.hackclub.com";
+const hcoauthscope = "openid profile email name slack_id verification_status";
+const publiccookiekeys = ["hcName", "hcEmail", "hcAvatar"];
+const adminslackid = "U0828RTU7FE";
+const maxauditevents = 100;
+const auditretentiondays = 14;
+const auditretentionms = auditretentiondays * 24 * 60 * 60 * 1000;
+const joinratelimitwindowms = 5 * 60 * 1000;
+const joinratelimitmaxrequests = 8;
+const rsvpratelimitwindowms = 5 * 60 * 1000;
+const rsvpratelimitmaxrequests = 12;
+const kvmetricskey = "ops:metrics:v1";
+const kvauditkey = "ops:audit:v1";
+const kvjoinratelimitprefix = "ops:rate-limit:join:";
+const kvrsvpratelimitprefix = "ops:rate-limit:rsvp:";
+const kvrsvpdoneprefix = "ops:rsvp:done:";
+const kvsessionprefix = "ops:session:v1:";
+const sessiontokenttlseconds = 60 * 60 * 12;
+const sessiontokenmaxagems = sessiontokenttlseconds * 1000;
 
-function getRuntimeState() {
+function getruntimestate() {
   if (!globalThis.__YSWS_RSVP_RUNTIME__) {
     globalThis.__YSWS_RSVP_RUNTIME__ = {
       startedAt: new Date().toISOString(),
@@ -59,7 +59,7 @@ export default {
     const primaryFrontendOrigin = allowedOrigins[0] || "";
     const isAllowedOrigin =
       requestOrigin && allowedOrigins.includes(requestOrigin);
-    const runtimeState = getRuntimeState();
+    const runtimeState = getruntimestate();
     const kv = env.YSWS && typeof env.YSWS.get === "function" ? env.YSWS : null;
     const allowedChannels = new Set(
       YSWS_LIST.map((item) => String(item.channel || "").trim().toUpperCase()),
@@ -85,7 +85,7 @@ export default {
       });
     }
 
-    function jsonResponse(body, status = 200, headers = {}) {
+    function jsonresponse(body, status = 200, headers = {}) {
       return withCors(
         new Response(JSON.stringify(body), {
           status,
@@ -97,7 +97,7 @@ export default {
       );
     }
 
-    function getDefaultMetrics() {
+    function getdefaultmetrics() {
       return {
         auth: { success: 0, failure: 0 },
         join: { success: 0, failure: 0 },
@@ -106,7 +106,7 @@ export default {
       };
     }
 
-    async function readKvJson(key, fallback) {
+    async function readkvjson(key, fallback) {
       if (!kv) return fallback;
 
       try {
@@ -117,7 +117,7 @@ export default {
       }
     }
 
-    async function writeKvJson(key, value, options = {}) {
+    async function writekvjson(key, value, options = {}) {
       if (!kv) return;
 
       try {
@@ -126,13 +126,13 @@ export default {
       }
     }
 
-    function parseBearerSessionToken(req) {
+    function parsebearersessiontoken(req) {
       const authHeader = String(req.headers.get("Authorization") || "").trim();
       if (!authHeader.toLowerCase().startsWith("bearer ")) return "";
       return authHeader.slice(7).trim();
     }
 
-    function getSessionFingerprint(req) {
+    function getsessionfingerprint(req) {
       const userAgent = String(req.headers.get("User-Agent") || "")
         .trim()
         .toLowerCase()
@@ -145,59 +145,59 @@ export default {
       return `${userAgent}|${language}`;
     }
 
-    function getSessionKey(token) {
-      return `${KV_SESSION_PREFIX}${token}`;
+    function getsessionkey(token) {
+      return `${kvsessionprefix}${token}`;
     }
 
-    async function writeSessionToken(token, payload, req) {
+    async function writesessiontoken(token, payload, req) {
       if (!kv || !token || !payload?.accessToken) return;
-      await writeKvJson(getSessionKey(token), {
+      await writekvjson(getsessionkey(token), {
         accessToken: payload.accessToken,
-        slackId: normalizeSlackId(payload.slackId || ""),
-        fingerprint: getSessionFingerprint(req),
+        slackId: normalizeslackid(payload.slackId || ""),
+        fingerprint: getsessionfingerprint(req),
         issuedAt: Date.now(),
       }, {
-        expirationTtl: SESSION_TOKEN_TTL_SECONDS,
+        expirationTtl: sessiontokenttlseconds,
       });
     }
 
-    async function deleteSessionToken(token) {
+    async function deletesessiontoken(token) {
       if (!kv || !token) return;
       try {
-        await kv.delete(getSessionKey(token));
+        await kv.delete(getsessionkey(token));
       } catch {
       }
     }
 
-    async function readSessionToken(token, req) {
+    async function readsessiontoken(token, req) {
       if (!kv || !token) return null;
-      const data = await readKvJson(getSessionKey(token), null);
+      const data = await readkvjson(getsessionkey(token), null);
       if (!data || typeof data !== "object") return null;
       const accessToken = String(data.accessToken || "").trim();
       if (!accessToken) return null;
       const issuedAt = Number(data.issuedAt || 0);
       const storedFingerprint = String(data.fingerprint || "");
-      const currentFingerprint = getSessionFingerprint(req);
-      const isExpired = !issuedAt || Date.now() - issuedAt > SESSION_TOKEN_MAX_AGE_MS;
+      const currentFingerprint = getsessionfingerprint(req);
+      const isExpired = !issuedAt || Date.now() - issuedAt > sessiontokenmaxagems;
       const fingerprintMismatch =
         Boolean(storedFingerprint) && storedFingerprint !== currentFingerprint;
 
       if (isExpired || fingerprintMismatch) {
-        await deleteSessionToken(token);
+        await deletesessiontoken(token);
         return null;
       }
 
       return {
         accessToken,
-        slackId: normalizeSlackId(data.slackId || ""),
+        slackId: normalizeslackid(data.slackId || ""),
       };
     }
 
-    function getRsvpDoneKey(slackId) {
-      return `${KV_RSVP_DONE_PREFIX}${slackId}`;
+    function getrsvpdonekey(slackId) {
+      return `${kvrsvpdoneprefix}${slackId}`;
     }
 
-    function normalizeRsvpDoneState(value) {
+    function normalizersvpdonestate(value) {
       const next = {};
 
       for (const item of YSWS_LIST) {
@@ -209,77 +209,77 @@ export default {
       return next;
     }
 
-    async function readUserRsvpDone(slackId) {
-      if (!slackId || !kv) return normalizeRsvpDoneState({});
-      const stored = await readKvJson(getRsvpDoneKey(slackId), {});
-      return normalizeRsvpDoneState(stored || {});
+    async function readuserrsvpdone(slackId) {
+      if (!slackId || !kv) return normalizersvpdonestate({});
+      const stored = await readkvjson(getrsvpdonekey(slackId), {});
+      return normalizersvpdonestate(stored || {});
     }
 
-    async function writeUserRsvpDone(slackId, value) {
-      const next = normalizeRsvpDoneState(value);
+    async function writeuserrsvpdone(slackId, value) {
+      const next = normalizersvpdonestate(value);
       if (!slackId || !kv) return next;
-      await writeKvJson(getRsvpDoneKey(slackId), next);
+      await writekvjson(getrsvpdonekey(slackId), next);
       return next;
     }
 
-    function runBackground(task) {
+    function runbackground(task) {
       if (!task) return;
       if (ctx && typeof ctx.waitUntil === "function") {
         ctx.waitUntil(task);
       }
     }
 
-    async function hydratePersistentState() {
+    async function hydratepersistentstate() {
       if (runtimeState.kvHydrated || !kv) return;
 
       const [storedMetrics, storedAudit] = await Promise.all([
-        readKvJson(KV_METRICS_KEY, null),
-        readKvJson(KV_AUDIT_KEY, null),
+        readkvjson(kvmetricskey, null),
+        readkvjson(kvauditkey, null),
       ]);
 
       runtimeState.metrics = {
-        ...getDefaultMetrics(),
+        ...getdefaultmetrics(),
         ...(storedMetrics || {}),
         auth: {
-          ...getDefaultMetrics().auth,
+          ...getdefaultmetrics().auth,
           ...(storedMetrics?.auth || {}),
         },
         join: {
-          ...getDefaultMetrics().join,
+          ...getdefaultmetrics().join,
           ...(storedMetrics?.join || {}),
         },
         rsvp: {
-          ...getDefaultMetrics().rsvp,
+          ...getdefaultmetrics().rsvp,
           ...(storedMetrics?.rsvp || {}),
         },
         errors: {
-          ...getDefaultMetrics().errors,
+          ...getdefaultmetrics().errors,
           ...(storedMetrics?.errors || {}),
           byCode: {
-            ...getDefaultMetrics().errors.byCode,
+            ...getdefaultmetrics().errors.byCode,
             ...(storedMetrics?.errors?.byCode || {}),
           },
         },
       };
       runtimeState.auditEvents = Array.isArray(storedAudit)
-        ? storedAudit.slice(0, MAX_AUDIT_EVENTS)
+        ? storedAudit.slice(0, maxauditevents)
         : [];
-      pruneAuditEvents();
+      pruneauditevents();
       runtimeState.kvHydrated = true;
     }
 
-    function persistMetrics() {
+    function persistmetrics() {
       if (!kv) return null;
-      return writeKvJson(KV_METRICS_KEY, runtimeState.metrics);
+      return writekvjson(kvmetricskey, runtimeState.metrics);
     }
 
-    function persistAudit() {
+    function persistaudit() {
       if (!kv) return null;
-      return writeKvJson(KV_AUDIT_KEY, runtimeState.auditEvents);
+      return writekvjson(kvauditkey, runtimeState.auditEvents);
     }
 
-    function pruneAuditEvents() {
-      const cutoff = Date.now() - AUDIT_RETENTION_MS;
+    function pruneauditevents() {
+      const cutoff = Date.now() - auditretentionms;
       const beforeCount = runtimeState.auditEvents.length;
 
       runtimeState.auditEvents = runtimeState.auditEvents
@@ -287,31 +287,31 @@ export default {
           const timestamp = Date.parse(event?.timestamp || "");
           return !Number.isNaN(timestamp) && timestamp >= cutoff;
         })
-        .slice(0, MAX_AUDIT_EVENTS);
+        .slice(0, maxauditevents);
 
       const removedCount = beforeCount - runtimeState.auditEvents.length;
       if (removedCount > 0) {
-        runBackground(persistAudit());
+        runbackground(persistaudit());
       }
 
       return removedCount;
     }
 
-    function countError(code) {
+    function counterror(code) {
       runtimeState.metrics.errors.total += 1;
       runtimeState.metrics.errors.byCode[code] =
         (runtimeState.metrics.errors.byCode[code] || 0) + 1;
-      runBackground(persistMetrics());
+      runbackground(persistmetrics());
     }
 
-    function recordMetric(group, outcome) {
+    function recordmetric(group, outcome) {
       if (!runtimeState.metrics[group]) return;
       runtimeState.metrics[group][outcome] += 1;
-      runBackground(persistMetrics());
+      runbackground(persistmetrics());
     }
 
-    function recordEvent(type, outcome, details = {}) {
-      pruneAuditEvents();
+    function recordevent(type, outcome, details = {}) {
+      pruneauditevents();
 
       runtimeState.auditEvents.unshift({
         id: crypto.randomUUID(),
@@ -321,19 +321,19 @@ export default {
         ...details,
       });
 
-      if (runtimeState.auditEvents.length > MAX_AUDIT_EVENTS) {
-        runtimeState.auditEvents.length = MAX_AUDIT_EVENTS;
+      if (runtimeState.auditEvents.length > maxauditevents) {
+        runtimeState.auditEvents.length = maxauditevents;
       }
 
-      runBackground(persistAudit());
+      runbackground(persistaudit());
     }
 
-    async function clearErrorMetrics() {
-      runtimeState.metrics.errors = getDefaultMetrics().errors;
-      await persistMetrics();
+    async function clearerrormetrics() {
+      runtimeState.metrics.errors = getdefaultmetrics().errors;
+      await persistmetrics();
     }
 
-    async function deleteAuditEventById(eventId) {
+    async function deleteauditeventbyid(eventId) {
       if (!eventId) return false;
 
       const beforeCount = runtimeState.auditEvents.length;
@@ -345,11 +345,11 @@ export default {
         return false;
       }
 
-      await persistAudit();
+      await persistaudit();
       return true;
     }
 
-    function errorResponse(
+    function errorresponse(
       status,
       code,
       message,
@@ -357,8 +357,8 @@ export default {
       headers = {},
       track = true,
     ) {
-      if (track) countError(code);
-      return jsonResponse(
+      if (track) counterror(code);
+      return jsonresponse(
         {
           ok: false,
           error: code,
@@ -371,7 +371,7 @@ export default {
       );
     }
 
-    function getRequestIp(req) {
+    function getrequestip(req) {
       return (
         req.headers.get("CF-Connecting-IP") ||
         req.headers.get("X-Forwarded-For") ||
@@ -381,7 +381,7 @@ export default {
         .trim();
     }
 
-    async function consumeRateLimit({
+    async function consumeratelimit({
       prefix,
       key,
       windowMs,
@@ -391,14 +391,14 @@ export default {
 
       if (kv) {
         const kvKey = `${prefix}${key}`;
-        const existing = await readKvJson(kvKey, null);
+        const existing = await readkvjson(kvKey, null);
 
         if (!existing || Number(existing.resetAt) <= now) {
           const next = {
             count: 1,
             resetAt: now + windowMs,
           };
-          await writeKvJson(kvKey, next, {
+          await writekvjson(kvKey, next, {
             expirationTtl: Math.ceil(windowMs / 1000) + 60,
           });
           return {
@@ -412,7 +412,7 @@ export default {
           count: Number(existing.count || 0) + 1,
           resetAt: Number(existing.resetAt),
         };
-        await writeKvJson(kvKey, next, {
+        await writekvjson(kvKey, next, {
           expirationTtl: Math.max(
             60,
             Math.ceil((next.resetAt - now) / 1000) + 60,
@@ -458,21 +458,21 @@ export default {
       };
     }
 
-    async function consumeJoinRateLimit(ip) {
-      return consumeRateLimit({
-        prefix: KV_JOIN_RATE_LIMIT_PREFIX,
+    async function consumejoinratelimit(ip) {
+      return consumeratelimit({
+        prefix: kvjoinratelimitprefix,
         key: ip,
-        windowMs: JOIN_RATE_LIMIT_WINDOW_MS,
-        maxRequests: JOIN_RATE_LIMIT_MAX_REQUESTS,
+        windowMs: joinratelimitwindowms,
+        maxRequests: joinratelimitmaxrequests,
       });
     }
 
-    async function consumeRsvpRateLimit(ip) {
-      return consumeRateLimit({
-        prefix: KV_RSVP_RATE_LIMIT_PREFIX,
+    async function consumersvpratelimit(ip) {
+      return consumeratelimit({
+        prefix: kvrsvpratelimitprefix,
         key: ip,
-        windowMs: RSVP_RATE_LIMIT_WINDOW_MS,
-        maxRequests: RSVP_RATE_LIMIT_MAX_REQUESTS,
+        windowMs: rsvpratelimitwindowms,
+        maxRequests: rsvpratelimitmaxrequests,
       });
     }
 
@@ -482,8 +482,8 @@ export default {
       return Number(((success / total) * 100).toFixed(1));
     }
 
-    function getMetricsSnapshot() {
-      pruneAuditEvents();
+    function getmetricssnapshot() {
+      pruneauditevents();
 
       return {
         startedAt: runtimeState.startedAt,
@@ -508,8 +508,8 @@ export default {
             runtimeState.metrics.join.failure,
           ),
           rateLimit: {
-            windowMs: JOIN_RATE_LIMIT_WINDOW_MS,
-            maxRequests: JOIN_RATE_LIMIT_MAX_REQUESTS,
+            windowMs: joinratelimitwindowms,
+            maxRequests: joinratelimitmaxrequests,
           },
         },
         rsvp: {
@@ -521,15 +521,15 @@ export default {
             runtimeState.metrics.rsvp.failure,
           ),
           rateLimit: {
-            windowMs: RSVP_RATE_LIMIT_WINDOW_MS,
-            maxRequests: RSVP_RATE_LIMIT_MAX_REQUESTS,
+            windowMs: rsvpratelimitwindowms,
+            maxRequests: rsvpratelimitmaxrequests,
           },
         },
         errors: runtimeState.metrics.errors,
         audit: {
           retainedEvents: runtimeState.auditEvents.length,
-          maxEvents: MAX_AUDIT_EVENTS,
-          retentionDays: AUDIT_RETENTION_DAYS,
+          maxEvents: maxauditevents,
+          retentionDays: auditretentiondays,
         },
       };
     }
@@ -546,7 +546,7 @@ export default {
       });
     }
 
-    await hydratePersistentState();
+    await hydratepersistentstate();
 
     function parseCookies(req) {
       const cookieHeader = req.headers.get("Cookie") || "";
@@ -578,11 +578,11 @@ export default {
         .join("; ");
     }
 
-    function getRedirectUri() {
+    function getredirecturi() {
       return `${url.origin}/auth/callback`;
     }
 
-    function buildFrontendLocation(extraParams = {}) {
+    function buildfrontendlocation(extraParams = {}) {
       const target = primaryFrontendOrigin || "/";
       const redirectUrl = new URL(target, url.origin);
 
@@ -594,15 +594,15 @@ export default {
       return redirectUrl.toString();
     }
 
-    function randomState() {
+    function randomstate() {
       const bytes = new Uint8Array(16);
       crypto.getRandomValues(bytes);
       return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
     }
 
-    async function hcTokenExchange(body) {
+    async function hctokenexchange(body) {
       try {
-        const response = await fetch(`${HC_AUTH_BASE}/oauth/token`, {
+        const response = await fetch(`${hcauthbase}/oauth/token`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
@@ -617,9 +617,9 @@ export default {
       }
     }
 
-    async function hcMe(accessToken) {
+    async function hcme(accessToken) {
       try {
-        const response = await fetch(`${HC_AUTH_BASE}/api/v1/me`, {
+        const response = await fetch(`${hcauthbase}/api/v1/me`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         const data = await response.json();
@@ -634,7 +634,7 @@ export default {
       }
     }
 
-    function getPathValue(source, path) {
+    function getpathvalue(source, path) {
       let current = source;
 
       for (const segment of path) {
@@ -648,12 +648,12 @@ export default {
       return "";
     }
 
-    function pickFirstValue(sources, paths, fallback = "") {
+    function pickfirstvalue(sources, paths, fallback = "") {
       for (const source of sources) {
         if (!source || typeof source !== "object") continue;
 
         for (const path of paths) {
-          const value = getPathValue(source, path);
+          const value = getpathvalue(source, path);
           if (value) return value;
         }
       }
@@ -661,14 +661,14 @@ export default {
       return fallback;
     }
 
-    function findValueAnywhere(source, keys, seen = new WeakSet()) {
+    function findvalueanywhere(source, keys, seen = new WeakSet()) {
       if (!source || typeof source !== "object") return "";
       if (seen.has(source)) return "";
       seen.add(source);
 
       if (Array.isArray(source)) {
         for (const item of source) {
-          const nested = findValueAnywhere(item, keys, seen);
+          const nested = findvalueanywhere(item, keys, seen);
           if (nested) return nested;
         }
         return "";
@@ -684,7 +684,7 @@ export default {
         }
 
         if (value && typeof value === "object") {
-          const nested = findValueAnywhere(value, keys, seen);
+          const nested = findvalueanywhere(value, keys, seen);
           if (nested) return nested;
         }
       }
@@ -692,21 +692,21 @@ export default {
       return "";
     }
 
-    function normalizeSlackId(value) {
+    function normalizeslackid(value) {
       return String(value || "")
         .trim()
         .toUpperCase();
     }
 
-    function normalizeVerificationStatus(value) {
+    function normalizeverificationstatus(value) {
       return String(value || "")
         .trim()
         .toLowerCase()
         .replace(/[\s_-]+/g, " ");
     }
 
-    function getVerificationState(rawStatus) {
-      const normalized = normalizeVerificationStatus(rawStatus);
+    function getverificationstate(rawStatus) {
+      const normalized = normalizeverificationstatus(rawStatus);
 
       if (!normalized) {
         return {
@@ -756,7 +756,7 @@ export default {
       };
     }
 
-    function normalizeYswsEligible(value) {
+    function normalizeyswseligible(value) {
       if (typeof value === "boolean") return value;
 
       const normalized = String(value || "")
@@ -774,7 +774,7 @@ export default {
       return null;
     }
 
-    function parseHCProfile(rawProfile, cookies = {}) {
+    function parsehcprofile(rawProfile, cookies = {}) {
       const sources = [
         rawProfile,
         rawProfile?.me,
@@ -794,9 +794,9 @@ export default {
         rawProfile?.result?.claims,
       ].filter(Boolean);
 
-      const find = (keys) => findValueAnywhere(sources, keys);
+      const find = (keys) => findvalueanywhere(sources, keys);
       const pick = (paths, fallback = "") =>
-        pickFirstValue(sources, paths, fallback);
+        pickfirstvalue(sources, paths, fallback);
 
       const fallbackSlackId = find([
         "slack_id",
@@ -838,7 +838,7 @@ export default {
 
       const fallbackYswsEligible = find(["ysws_eligible", "yswsEligible"]);
 
-      const slackId = normalizeSlackId(
+      const slackId = normalizeslackid(
         pick(
           [
             ["slack_id"],
@@ -902,7 +902,7 @@ export default {
         fallbackVerificationStatus || "",
       );
 
-      const yswsEligible = normalizeYswsEligible(
+      const yswsEligible = normalizeyswseligible(
         pick([["ysws_eligible"], ["yswsEligible"]], fallbackYswsEligible || ""),
       );
 
@@ -913,7 +913,7 @@ export default {
         email,
         avatar,
         yswsEligible,
-        ...getVerificationState(verificationStatus),
+        ...getverificationstate(verificationStatus),
       };
     }
 
@@ -928,7 +928,7 @@ export default {
       return response.json();
     }
 
-    async function isUserInChannel(channelId, userId) {
+    async function isuserinchannel(channelId, userId) {
       let cursor = "";
       for (let i = 0; i < 20; i++) {
         const data = await slackGet(
@@ -950,17 +950,17 @@ export default {
       return false;
     }
 
-    async function getSessionProfile(req) {
+    async function getsessionprofile(req) {
       const cookies = parseCookies(req);
       let accessToken = (cookies.hcAccessToken || "").trim();
-      let fallbackSlackId = normalizeSlackId(cookies.hcSlackId || "");
+      let fallbackSlackId = normalizeslackid(cookies.hcSlackId || "");
 
       if (!accessToken) {
-        const bearerToken = parseBearerSessionToken(req);
-        const sessionFromToken = await readSessionToken(bearerToken, req);
+        const bearerToken = parsebearersessiontoken(req);
+        const sessionFromToken = await readsessiontoken(bearerToken, req);
         if (sessionFromToken?.accessToken) {
           accessToken = sessionFromToken.accessToken;
-          fallbackSlackId = normalizeSlackId(
+          fallbackSlackId = normalizeslackid(
             sessionFromToken.slackId || fallbackSlackId,
           );
         }
@@ -976,7 +976,7 @@ export default {
         };
       }
 
-      const me = await hcMe(accessToken);
+      const me = await hcme(accessToken);
       if (!me.ok) {
         return {
           ok: false,
@@ -992,20 +992,20 @@ export default {
         cookies,
         accessToken,
         me,
-        profile: parseHCProfile(me.data || {}, {
+        profile: parsehcprofile(me.data || {}, {
           ...cookies,
           hcSlackId: fallbackSlackId || cookies.hcSlackId || "",
         }),
       };
     }
 
-    async function requireAdmin(req, { logDenied = true } = {}) {
-      const session = await getSessionProfile(req);
+    async function requireadmin(req, { logDenied = true } = {}) {
+      const session = await getsessionprofile(req);
 
       if (!session.ok) {
         return {
           ok: false,
-          response: errorResponse(
+          response: errorresponse(
             session.status,
             session.code,
             session.message,
@@ -1016,21 +1016,21 @@ export default {
         };
       }
 
-      const adminSlackId = normalizeSlackId(
+      const adminSlackId = normalizeslackid(
         session.profile.slackId || session.cookies.hcSlackId,
       );
 
-      if (adminSlackId !== ADMIN_SLACK_ID) {
+      if (adminSlackId !== adminslackid) {
         if (logDenied) {
-          recordEvent("admin_access", "failure", {
+          recordevent("admin_access", "failure", {
             slackId: adminSlackId || "unknown",
-            ip: getRequestIp(req),
+            ip: getrequestip(req),
             code: "admin_only",
           });
         }
         return {
           ok: false,
-          response: errorResponse(
+          response: errorresponse(
             403,
             "admin_only",
             "Only the configured admin can access this endpoint.",
@@ -1046,17 +1046,27 @@ export default {
     }
 
     switch (url.pathname) {
+      case "/login":
+      case "/login/": {
+        return new Response(null, {
+          status: 302,
+          headers: {
+            Location: buildfrontendlocation({ view: "login" }),
+          },
+        });
+      }
+
       case "/auth/start": {
         if (!env.HC_CLIENT_ID) {
           return new Response("Missing HC_CLIENT_ID", { status: 500 });
         }
 
-        const state = randomState();
-        const authUrl = new URL(`${HC_AUTH_BASE}/oauth/authorize`);
+        const state = randomstate();
+        const authUrl = new URL(`${hcauthbase}/oauth/authorize`);
         authUrl.searchParams.set("client_id", env.HC_CLIENT_ID);
-        authUrl.searchParams.set("redirect_uri", getRedirectUri());
+        authUrl.searchParams.set("redirect_uri", getredirecturi());
         authUrl.searchParams.set("response_type", "code");
-        authUrl.searchParams.set("scope", HC_OAUTH_SCOPE);
+        authUrl.searchParams.set("scope", hcoauthscope);
         authUrl.searchParams.set("state", state);
 
         return new Response(null, {
@@ -1072,15 +1082,15 @@ export default {
         const cookies = parseCookies(request);
         const code = (url.searchParams.get("code") || "").trim();
         const state = (url.searchParams.get("state") || "").trim();
-        const ip = getRequestIp(request);
+        const ip = getrequestip(request);
 
         if (!code || !state || state !== cookies.hcOauthState) {
-          recordMetric("auth", "failure");
-          countError("oauth_state_invalid");
-          recordEvent("auth_callback", "failure", {
+          recordmetric("auth", "failure");
+          counterror("oauth_state_invalid");
+          recordevent("auth_callback", "failure", {
             code: "oauth_state_invalid",
           });
-          const target = buildFrontendLocation({
+          const target = buildfrontendlocation({
             oauth_error: "Hack Club Auth verification failed",
           });
           return new Response(null, {
@@ -1092,22 +1102,22 @@ export default {
           });
         }
 
-        const tokenData = await hcTokenExchange({
+        const tokenData = await hctokenexchange({
           client_id: env.HC_CLIENT_ID,
           client_secret: env.HC_CLIENT_SECRET,
-          redirect_uri: getRedirectUri(),
+          redirect_uri: getredirecturi(),
           code,
           grant_type: "authorization_code",
         });
 
         if (!tokenData.access_token) {
-          recordMetric("auth", "failure");
-          countError("oauth_token_exchange_failed");
-          recordEvent("auth_callback", "failure", {
+          recordmetric("auth", "failure");
+          counterror("oauth_token_exchange_failed");
+          recordevent("auth_callback", "failure", {
             code: "oauth_token_exchange_failed",
             details: tokenData.error || "token_exchange_failed",
           });
-          const target = buildFrontendLocation({
+          const target = buildfrontendlocation({
             oauth_error: tokenData.error || "Token exchange failed",
           });
           return new Response(null, {
@@ -1119,15 +1129,15 @@ export default {
           });
         }
 
-        const me = await hcMe(tokenData.access_token);
+        const me = await hcme(tokenData.access_token);
         if (!me.ok) {
-          recordMetric("auth", "failure");
-          countError("hc_profile_fetch_failed");
-          recordEvent("auth_callback", "failure", {
+          recordmetric("auth", "failure");
+          counterror("hc_profile_fetch_failed");
+          recordevent("auth_callback", "failure", {
             code: "hc_profile_fetch_failed",
             status: me.status,
           });
-          const target = buildFrontendLocation({
+          const target = buildfrontendlocation({
             oauth_error: "Could not load your Hack Club profile",
           });
           return new Response(null, {
@@ -1139,23 +1149,23 @@ export default {
           });
         }
 
-        const profile = parseHCProfile(me.data || {});
-        recordMetric("auth", "success");
-        recordEvent("auth_callback", "success", {
+        const profile = parsehcprofile(me.data || {});
+        recordmetric("auth", "success");
+        recordevent("auth_callback", "success", {
           slackId: profile.slackId || "unknown",
         });
 
         let sessionToken = "";
         if (kv) {
           sessionToken = crypto.randomUUID().replace(/-/g, "");
-          await writeSessionToken(sessionToken, {
+          await writesessiontoken(sessionToken, {
             accessToken: tokenData.access_token,
             slackId: profile.slackId,
           }, request);
         }
 
         const headers = new Headers({
-          Location: buildFrontendLocation({
+          Location: buildfrontendlocation({
             auth_attempted: "1",
             ...(sessionToken ? { session_token: sessionToken } : {}),
           }),
@@ -1198,10 +1208,10 @@ export default {
       }
 
       case "/auth/logout": {
-        const bearerToken = parseBearerSessionToken(request);
-        await deleteSessionToken(bearerToken);
+        const bearerToken = parsebearersessiontoken(request);
+        await deletesessiontoken(bearerToken);
 
-        const headers = new Headers({ Location: buildFrontendLocation() });
+        const headers = new Headers({ Location: buildfrontendlocation() });
         [
           "hcAccessToken",
           "hcRefreshToken",
@@ -1214,7 +1224,7 @@ export default {
           headers.append(
             "Set-Cookie",
             serializeCookie(key, "", 0, {
-              httpOnly: !PUBLIC_COOKIE_KEYS.includes(key),
+              httpOnly: !publiccookiekeys.includes(key),
             }),
           );
         });
@@ -1225,9 +1235,9 @@ export default {
         return withCors(Response.json(YSWS_LIST));
 
       case "/api/user": {
-        const session = await getSessionProfile(request);
+        const session = await getsessionprofile(request);
         if (!session.ok) {
-          return jsonResponse(
+          return jsonresponse(
             { ok: false, error: session.code, code: session.code },
             session.status,
           );
@@ -1237,7 +1247,7 @@ export default {
           .trim()
           .toUpperCase();
         const profile = session.profile;
-        const slackId = normalizeSlackId(profile.slackId || fallbackSlackId);
+        const slackId = normalizeslackid(profile.slackId || fallbackSlackId);
         let slackUser = null;
 
         if (slackId && env.SLACK_TOKEN) {
@@ -1270,14 +1280,14 @@ export default {
         if (slackId && env.SLACK_TOKEN) {
           await Promise.all(
             YSWS_LIST.map(async (p) => {
-              membership[p.channel] = await isUserInChannel(p.channel, slackId);
+              membership[p.channel] = await isuserinchannel(p.channel, slackId);
             }),
           );
         } else {
           for (const p of YSWS_LIST) membership[p.channel] = false;
         }
 
-        const rsvpDone = await readUserRsvpDone(slackId);
+        const rsvpDone = await readuserrsvpdone(slackId);
 
         return withCors(
           Response.json({
@@ -1300,21 +1310,21 @@ export default {
       case "/api/rsvp": {
         if (request.method !== "POST") break;
 
-        const ip = getRequestIp(request);
-        const rateLimit = await consumeRsvpRateLimit(ip);
+        const ip = getrequestip(request);
+        const rateLimit = await consumersvpratelimit(ip);
         const rateLimitHeaders = {
-          "X-RateLimit-Limit": String(RSVP_RATE_LIMIT_MAX_REQUESTS),
+          "X-RateLimit-Limit": String(rsvpratelimitmaxrequests),
           "X-RateLimit-Remaining": String(rateLimit.remaining),
           "X-RateLimit-Reset": String(rateLimit.resetAt),
         };
 
         if (!rateLimit.allowed) {
-          recordMetric("rsvp", "failure");
-          recordEvent("rsvp_done", "failure", {
+          recordmetric("rsvp", "failure");
+          recordevent("rsvp_done", "failure", {
             code: "rate_limited",
             ip,
           });
-          return errorResponse(
+          return errorresponse(
             429,
             "rate_limited",
             "Too many RSVP updates from this IP. Please wait a few minutes.",
@@ -1333,10 +1343,10 @@ export default {
           );
         }
 
-        const session = await getSessionProfile(request);
+        const session = await getsessionprofile(request);
         if (!session.ok) {
-          recordMetric("rsvp", "failure");
-          return errorResponse(
+          recordmetric("rsvp", "failure");
+          return errorresponse(
             session.status,
             session.code,
             session.message,
@@ -1347,8 +1357,8 @@ export default {
         }
 
         if (!kv) {
-          recordMetric("rsvp", "failure");
-          return errorResponse(
+          recordmetric("rsvp", "failure");
+          return errorresponse(
             500,
             "missing_storage",
             "RSVP completion storage is not configured.",
@@ -1358,16 +1368,16 @@ export default {
         }
 
         const body = await request.json().catch(() => null);
-        const channel = normalizeSlackId(body?.channel || "");
+        const channel = normalizeslackid(body?.channel || "");
         const done = body?.done !== false;
 
         if (!channel) {
-          recordMetric("rsvp", "failure");
-          recordEvent("rsvp_done", "failure", {
+          recordmetric("rsvp", "failure");
+          recordevent("rsvp_done", "failure", {
             code: "invalid_payload",
             ip,
           });
-          return errorResponse(
+          return errorresponse(
             400,
             "invalid_payload",
             "RSVP updates must include a valid channel ID.",
@@ -1377,13 +1387,13 @@ export default {
         }
 
         if (!allowedChannels.has(channel)) {
-          recordMetric("rsvp", "failure");
-          recordEvent("rsvp_done", "failure", {
+          recordmetric("rsvp", "failure");
+          recordevent("rsvp_done", "failure", {
             channel,
             code: "channel_not_allowed",
             ip,
           });
-          return errorResponse(
+          return errorresponse(
             403,
             "channel_not_allowed",
             "That channel isn't on the allowed list.",
@@ -1392,18 +1402,18 @@ export default {
           );
         }
 
-        const slackId = normalizeSlackId(
+        const slackId = normalizeslackid(
           session.profile.slackId || session.cookies.hcSlackId,
         );
 
         if (!slackId) {
-          recordMetric("rsvp", "failure");
-          recordEvent("rsvp_done", "failure", {
+          recordmetric("rsvp", "failure");
+          recordevent("rsvp_done", "failure", {
             channel,
             code: "missing_slack_id",
             ip,
           });
-          return errorResponse(
+          return errorresponse(
             400,
             "missing_slack_id",
             "Your account is missing the Slack scope. Sign out and back in.",
@@ -1412,18 +1422,18 @@ export default {
           );
         }
 
-        const currentState = await readUserRsvpDone(slackId);
+        const currentState = await readuserrsvpdone(slackId);
         currentState[channel] = done;
-        const rsvpDone = await writeUserRsvpDone(slackId, currentState);
+        const rsvpDone = await writeuserrsvpdone(slackId, currentState);
 
-        recordMetric("rsvp", "success");
-        recordEvent("rsvp_done", "success", {
+        recordmetric("rsvp", "success");
+        recordevent("rsvp_done", "success", {
           slackId,
           channel,
           done,
         });
 
-        return jsonResponse({
+        return jsonresponse({
           ok: true,
           slackId,
           channel,
@@ -1435,20 +1445,20 @@ export default {
       case "/api/join": {
         if (request.method !== "POST") break;
 
-        const ip = getRequestIp(request);
-        const rateLimit = await consumeJoinRateLimit(ip);
+        const ip = getrequestip(request);
+        const rateLimit = await consumejoinratelimit(ip);
         const rateLimitHeaders = {
-          "X-RateLimit-Limit": String(JOIN_RATE_LIMIT_MAX_REQUESTS),
+          "X-RateLimit-Limit": String(joinratelimitmaxrequests),
           "X-RateLimit-Remaining": String(rateLimit.remaining),
           "X-RateLimit-Reset": String(rateLimit.resetAt),
         };
 
         if (!rateLimit.allowed) {
-          recordMetric("join", "failure");
-          recordEvent("join", "failure", {
+          recordmetric("join", "failure");
+          recordevent("join", "failure", {
             code: "rate_limited",
           });
-          return errorResponse(
+          return errorresponse(
             429,
             "rate_limited",
             "Too many join requests from this IP. Please wait a few minutes.",
@@ -1467,13 +1477,13 @@ export default {
           );
         }
 
-        const session = await getSessionProfile(request);
+        const session = await getsessionprofile(request);
         if (!session.ok) {
-          recordMetric("join", "failure");
-          recordEvent("join", "failure", {
+          recordmetric("join", "failure");
+          recordevent("join", "failure", {
             code: session.code,
           });
-          return errorResponse(
+          return errorresponse(
             session.status,
             session.code,
             session.message,
@@ -1484,11 +1494,11 @@ export default {
         }
 
         if (!env.SLACK_TOKEN) {
-          recordMetric("join", "failure");
-          recordEvent("join", "failure", {
+          recordmetric("join", "failure");
+          recordevent("join", "failure", {
             code: "missing_slack_token",
           });
-          return errorResponse(
+          return errorresponse(
             500,
             "missing_slack_token",
             "Slack isn't set up. Contact the site owner.",
@@ -1498,14 +1508,14 @@ export default {
         }
 
         const data = await request.json().catch(() => null);
-        const channel = normalizeSlackId(data?.channel || "");
+        const channel = normalizeslackid(data?.channel || "");
 
         if (!channel) {
-          recordMetric("join", "failure");
-          recordEvent("join", "failure", {
+          recordmetric("join", "failure");
+          recordevent("join", "failure", {
             code: "invalid_payload",
           });
-          return errorResponse(
+          return errorresponse(
             400,
             "invalid_payload",
             "Join requests must include a valid channel ID.",
@@ -1515,12 +1525,12 @@ export default {
         }
 
         if (!allowedChannels.has(channel)) {
-          recordMetric("join", "failure");
-          recordEvent("join", "failure", {
+          recordmetric("join", "failure");
+          recordevent("join", "failure", {
             channel,
             code: "channel_not_allowed",
           });
-          return errorResponse(
+          return errorresponse(
             403,
             "channel_not_allowed",
             "That channel isn't on the allowed list.",
@@ -1530,17 +1540,17 @@ export default {
         }
 
         const profile = session.profile;
-        const slackId = normalizeSlackId(
+        const slackId = normalizeslackid(
           profile.slackId || session.cookies.hcSlackId,
         );
 
         if (!slackId) {
-          recordMetric("join", "failure");
-          recordEvent("join", "failure", {
+          recordmetric("join", "failure");
+          recordevent("join", "failure", {
             channel,
             code: "missing_slack_id",
           });
-          return errorResponse(
+          return errorresponse(
             400,
             "missing_slack_id",
             "Your account is missing the Slack scope. Sign out and back in.",
@@ -1565,13 +1575,13 @@ export default {
           .json()
           .catch(() => ({ ok: false, error: "invite_failed" }));
         if (!inviteData.ok && inviteData.error !== "already_in_channel") {
-          recordMetric("join", "failure");
-          recordEvent("join", "failure", {
+          recordmetric("join", "failure");
+          recordevent("join", "failure", {
             channel,
             slackId,
             code: inviteData.error || "invite_failed",
           });
-          return errorResponse(
+          return errorresponse(
             400,
             inviteData.error || "invite_failed",
             "Could not add you to that Slack channel.",
@@ -1580,55 +1590,55 @@ export default {
           );
         }
 
-        recordMetric("join", "success");
-        recordEvent("join", "success", {
+        recordmetric("join", "success");
+        recordevent("join", "success", {
           channel,
           slackId,
           result: inviteData.error === "already_in_channel" ? "already_in_channel" : "invited",
         });
 
-        return jsonResponse({ ok: true }, 200, rateLimitHeaders);
+        return jsonresponse({ ok: true }, 200, rateLimitHeaders);
       }
 
       case "/api/admin/metrics": {
-        const admin = await requireAdmin(request, { logDenied: false });
+        const admin = await requireadmin(request, { logDenied: false });
         if (!admin.ok) return admin.response;
 
-        return jsonResponse({
+        return jsonresponse({
           ok: true,
           adminSlackId: admin.slackId,
-          metrics: getMetricsSnapshot(),
+          metrics: getmetricssnapshot(),
         });
       }
 
       case "/api/admin/access": {
-        const admin = await requireAdmin(request, { logDenied: false });
+        const admin = await requireadmin(request, { logDenied: false });
         if (!admin.ok) return admin.response;
 
-        return jsonResponse({
+        return jsonresponse({
           ok: true,
           adminSlackId: admin.slackId,
         });
       }
 
       case "/api/admin/audit": {
-        const admin = await requireAdmin(request, { logDenied: false });
+        const admin = await requireadmin(request, { logDenied: false });
         if (!admin.ok) return admin.response;
 
         if (request.method === "DELETE") {
           const eventId = String(url.searchParams.get("id") || "").trim();
 
           if (eventId) {
-            const deleted = await deleteAuditEventById(eventId);
+            const deleted = await deleteauditeventbyid(eventId);
             if (!deleted) {
-              return errorResponse(
+              return errorresponse(
                 404,
                 "audit_event_not_found",
                 "That audit event could not be found.",
               );
             }
 
-            return jsonResponse({
+            return jsonresponse({
               ok: true,
               adminSlackId: admin.slackId,
               deletedId: eventId,
@@ -1637,9 +1647,9 @@ export default {
 
           const clearedCount = runtimeState.auditEvents.length;
           runtimeState.auditEvents = [];
-          await persistAudit();
+          await persistaudit();
 
-          return jsonResponse({
+          return jsonresponse({
             ok: true,
             adminSlackId: admin.slackId,
             clearedCount,
@@ -1647,7 +1657,7 @@ export default {
         }
 
         if (request.method !== "GET") {
-          return errorResponse(
+          return errorresponse(
             405,
             "method_not_allowed",
             "Only GET and DELETE are supported for admin audit.",
@@ -1658,23 +1668,23 @@ export default {
           100,
           Math.max(1, Number(url.searchParams.get("limit") || 25)),
         );
-        const prunedCount = pruneAuditEvents();
+        const prunedCount = pruneauditevents();
 
-        return jsonResponse({
+        return jsonresponse({
           ok: true,
           adminSlackId: admin.slackId,
-          retentionDays: AUDIT_RETENTION_DAYS,
+          retentionDays: auditretentiondays,
           prunedCount,
           events: runtimeState.auditEvents.slice(0, limit),
         });
       }
 
       case "/api/admin/errors": {
-        const admin = await requireAdmin(request, { logDenied: false });
+        const admin = await requireadmin(request, { logDenied: false });
         if (!admin.ok) return admin.response;
 
         if (request.method !== "DELETE") {
-          return errorResponse(
+          return errorresponse(
             405,
             "method_not_allowed",
             "Only DELETE is supported for admin errors.",
@@ -1682,9 +1692,9 @@ export default {
         }
 
         const clearedTotal = runtimeState.metrics.errors.total || 0;
-        await clearErrorMetrics();
+        await clearerrormetrics();
 
-        return jsonResponse({
+        return jsonresponse({
           ok: true,
           adminSlackId: admin.slackId,
           clearedTotal,
@@ -1694,12 +1704,12 @@ export default {
       case "/api/admin/view-as": {
         if (request.method !== "GET") break;
 
-        const admin = await requireAdmin(request, { logDenied: false });
+        const admin = await requireadmin(request, { logDenied: false });
         if (!admin.ok) return admin.response;
 
-        const targetId = normalizeSlackId(url.searchParams.get("slackId") || "");
+        const targetId = normalizeslackid(url.searchParams.get("slackId") || "");
         if (!targetId) {
-          return errorResponse(400, "missing_slack_id", "Provide a slackId query param.");
+          return errorresponse(400, "missing_slack_id", "Provide a slackId query param.");
         }
 
         let slackUser = null;
@@ -1711,21 +1721,21 @@ export default {
         }
 
         if (!slackUser) {
-          return errorResponse(404, "user_not_found", "Could not find a Slack user with that ID.");
+          return errorresponse(404, "user_not_found", "Could not find a Slack user with that ID.");
         }
 
         const membership = {};
         if (env.SLACK_TOKEN) {
           await Promise.all(
             YSWS_LIST.map(async (p) => {
-              membership[p.channel] = await isUserInChannel(p.channel, targetId);
+              membership[p.channel] = await isuserinchannel(p.channel, targetId);
             }),
           );
         } else {
           for (const p of YSWS_LIST) membership[p.channel] = false;
         }
 
-        const rsvpDone = await readUserRsvpDone(targetId);
+        const rsvpDone = await readuserrsvpdone(targetId);
 
         const profile = {
           slackId: targetId,
@@ -1739,7 +1749,7 @@ export default {
           yswsEligible: null,
         };
 
-        return jsonResponse({
+        return jsonresponse({
           ok: true,
           ...profile,
           membership,
@@ -1750,12 +1760,12 @@ export default {
       case "/api/admin/lookup": {
         if (request.method !== "GET") break;
 
-        const admin = await requireAdmin(request, { logDenied: false });
+        const admin = await requireadmin(request, { logDenied: false });
         if (!admin.ok) return admin.response;
 
-        const targetId = normalizeSlackId(url.searchParams.get("slackId") || "");
+        const targetId = normalizeslackid(url.searchParams.get("slackId") || "");
         if (!targetId) {
-          return errorResponse(400, "missing_slack_id", "Provide a slackId query param.");
+          return errorresponse(400, "missing_slack_id", "Provide a slackId query param.");
         }
 
         let slackUser = null;
@@ -1770,16 +1780,16 @@ export default {
         if (env.SLACK_TOKEN) {
           await Promise.all(
             YSWS_LIST.map(async (p) => {
-              membership[p.channel] = await isUserInChannel(p.channel, targetId);
+              membership[p.channel] = await isuserinchannel(p.channel, targetId);
             }),
           );
         } else {
           for (const p of YSWS_LIST) membership[p.channel] = false;
         }
 
-        const rsvpDone = await readUserRsvpDone(targetId);
+        const rsvpDone = await readuserrsvpdone(targetId);
 
-        return jsonResponse({
+        return jsonresponse({
           ok: true,
           slackId: targetId,
           name: slackUser?.profile?.real_name || slackUser?.profile?.display_name || "",
@@ -1793,23 +1803,23 @@ export default {
       case "/api/admin/test-join": {
         if (request.method !== "POST") break;
 
-        const admin = await requireAdmin(request);
+        const admin = await requireadmin(request);
         if (!admin.ok) return admin.response;
 
         if (!env.SLACK_TOKEN) {
-          return errorResponse(500, "missing_slack_token", "Slack isn't set up. Contact the site owner.");
+          return errorresponse(500, "missing_slack_token", "Slack isn't set up. Contact the site owner.");
         }
 
         const body = await request.json().catch(() => null);
-        const channel = normalizeSlackId(body?.channel || "");
-        const targetId = normalizeSlackId(body?.slackId || "");
+        const channel = normalizeslackid(body?.channel || "");
+        const targetId = normalizeslackid(body?.slackId || "");
 
         if (!channel || !targetId) {
-          return errorResponse(400, "invalid_payload", "Provide channel and slackId.");
+          return errorresponse(400, "invalid_payload", "Provide channel and slackId.");
         }
 
         if (!allowedChannels.has(channel)) {
-          return errorResponse(403, "channel_not_allowed", "That channel isn't on the allowed list.", { channel });
+          return errorresponse(403, "channel_not_allowed", "That channel isn't on the allowed list.", { channel });
         }
 
         const invite = await fetch("https://slack.com/api/conversations.invite", {
@@ -1823,7 +1833,7 @@ export default {
 
         const inviteData = await invite.json().catch(() => ({ ok: false, error: "invite_failed" }));
 
-        recordEvent("admin_test_join", inviteData.ok || inviteData.error === "already_in_channel" ? "success" : "failure", {
+        recordevent("admin_test_join", inviteData.ok || inviteData.error === "already_in_channel" ? "success" : "failure", {
           adminSlackId: admin.slackId,
           channel,
           slackId: targetId,
@@ -1831,10 +1841,10 @@ export default {
         });
 
         if (!inviteData.ok && inviteData.error !== "already_in_channel") {
-          return errorResponse(400, inviteData.error || "invite_failed", "Could not add that user to the channel.", { channel });
+          return errorresponse(400, inviteData.error || "invite_failed", "Could not add that user to the channel.", { channel });
         }
 
-        return jsonResponse({
+        return jsonresponse({
           ok: true,
           channel,
           slackId: targetId,
@@ -1845,38 +1855,38 @@ export default {
       case "/api/admin/test-rsvp": {
         if (request.method !== "POST") break;
 
-        const admin = await requireAdmin(request, { logDenied: false });
+        const admin = await requireadmin(request, { logDenied: false });
         if (!admin.ok) return admin.response;
 
         if (!kv) {
-          return errorResponse(500, "missing_storage", "RSVP completion storage is not configured.");
+          return errorresponse(500, "missing_storage", "RSVP completion storage is not configured.");
         }
 
         const body = await request.json().catch(() => null);
-        const channel = normalizeSlackId(body?.channel || "");
-        const targetId = normalizeSlackId(body?.slackId || "");
+        const channel = normalizeslackid(body?.channel || "");
+        const targetId = normalizeslackid(body?.slackId || "");
         const done = body?.done !== false;
 
         if (!channel || !targetId) {
-          return errorResponse(400, "invalid_payload", "Provide channel and slackId.");
+          return errorresponse(400, "invalid_payload", "Provide channel and slackId.");
         }
 
         if (!allowedChannels.has(channel)) {
-          return errorResponse(403, "channel_not_allowed", "That channel isn't on the allowed list.", { channel });
+          return errorresponse(403, "channel_not_allowed", "That channel isn't on the allowed list.", { channel });
         }
 
-        const currentState = await readUserRsvpDone(targetId);
+        const currentState = await readuserrsvpdone(targetId);
         currentState[channel] = done;
-        const rsvpDone = await writeUserRsvpDone(targetId, currentState);
+        const rsvpDone = await writeuserrsvpdone(targetId, currentState);
 
-        recordEvent("admin_test_rsvp", "success", {
+        recordevent("admin_test_rsvp", "success", {
           adminSlackId: admin.slackId,
           channel,
           slackId: targetId,
           done,
         });
 
-        return jsonResponse({
+        return jsonresponse({
           ok: true,
           channel,
           slackId: targetId,

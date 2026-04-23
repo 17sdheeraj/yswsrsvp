@@ -27,31 +27,52 @@
 
   <body>
     <div class="container">
+      <div class="navbar">
+        <div class="navlinks">
+          <a class="navlink" href="/">Home</a>
+          <a id="authnavbtn" class="navlink" href="/login">Login</a>
+        </div>
+      </div>
+
       <div class="hero">
         <div>
           <h1>YSWS RSVP</h1>
           <div class="subtitle">
-            Join RSVP channels automatically and submit each YSWS RSVP from one
-            place!
+            Browse all YSWS programs, open RSVP forms, and join channels from
+            one place.
           </div>
         </div>
       </div>
 
-      <div id="step1" class="section">
-        <div class="auth-shell">
-          <div class="auth-panel">
-            <p class="pill" style="width: max-content">Secure HCA signin</p>
+      <div id="publicsection" class="section" style="display: none">
+        <p class="muted" style="margin: 0 0 18px">
+          You can view every YSWS, open the RSVP form, and join
+          each channel directly.
+        </p>
 
-            <h2 class="auth-title">Login with HC Auth to continue</h2>
+        <div id="publicprograms" class="grid"></div>
 
-            <p class="auth-copy">
+        <p class="ctalogin">
+          tired of manually tying in details and joining channels?
+          <a href="/login">login now</a>
+          to make joining channels automatic and show your info which you can
+          copy paste into the fillout form.
+        </p>
+      </div>
+
+      <div id="step1" class="section" style="display: none">
+        <div class="authshell">
+          <div class="authpanel">
+            <h2 class="authtitle">Login with HC Auth to continue</h2>
+
+            <p class="authcopy">
               Sign in once with HC Auth. We load your profile, check channel
               membership, and let you join missing channels.
             </p>
 
             <div>
-              <a id="loginBtn" class="slack-button button-link" href="#">
-                <span class="slack-mark" aria-hidden="true">
+              <a id="loginbtn" class="slackbutton buttonlink" href="#">
+                <span class="slackmark" aria-hidden="true">
                   <span style="background: #e01e5a"></span>
                   <span style="background: #36c5f0"></span>
                   <span style="background: #2eb67d"></span>
@@ -61,9 +82,9 @@
               </a>
             </div>
 
-            <div id="statusBox" class="status" aria-live="polite"></div>
+            <div id="statusbox" class="status" aria-live="polite"></div>
 
-            <div id="supportBox" class="support-box">
+            <div id="supportbox" class="supportbox">
               <p class="muted" style="margin: 0">
                 If you see this, copy and paste the following error details to
                 <a
@@ -73,13 +94,13 @@
                   >Dheeraj S</a
                 >.
               </p>
-              <textarea id="supportMessage" readonly></textarea>
-              <div class="support-actions">
-                <button type="button" onclick="copySupportMessage()">
+              <textarea id="supportmessage" readonly></textarea>
+              <div class="supportactions">
+                <button type="button" onclick="copysupportmessage()">
                   Copy error details
                 </button>
                 <a
-                  class="slack-button button-link joined"
+                  class="slackbutton buttonlink joined"
                   target="_blank"
                   rel="noreferrer"
                   href="https://hackclub.enterprise.slack.com/team/U0828RTU7FE"
@@ -89,12 +110,12 @@
             </div>
           </div>
 
-          <div class="auth-card">
+          <div class="authcard">
             <div>
-              <p class="stat-label" style="margin: 0 0 10px">What you get</p>
-              <div class="feature-list">
-                <div class="feature-item">
-                  <span class="feature-dot"></span>
+              <p class="statlabel" style="margin: 0 0 10px">What you get</p>
+              <div class="featurelist">
+                <div class="featureitem">
+                  <span class="featuredot"></span>
                   <div>
                     <strong>Automatic identity</strong>
                     <p class="tiny" style="margin-top: 4px">
@@ -102,8 +123,8 @@
                     </p>
                   </div>
                 </div>
-                <div class="feature-item">
-                  <span class="feature-dot"></span>
+                <div class="featureitem">
+                  <span class="featuredot"></span>
                   <div>
                     <strong>Live membership checks</strong>
                     <p class="tiny" style="margin-top: 4px">
@@ -111,8 +132,8 @@
                     </p>
                   </div>
                 </div>
-                <div class="feature-item">
-                  <span class="feature-dot"></span>
+                <div class="featureitem">
+                  <span class="featuredot"></span>
                   <div>
                     <strong>Fast channel access</strong>
                     <p class="tiny" style="margin-top: 4px">
@@ -138,15 +159,15 @@
         <p>Checking channel memberships... we might be summoning slack elves for this.</p>
       </div>
 
-      <div id="programModal" class="modal" onclick="closeYswsModal(event)">
-        <div class="modal-box" onclick="event.stopPropagation()">
-          <h2 id="programModalTitle" style="margin: 0"></h2>
-          <p id="programModalDesc" class="modal-desc"></p>
-          <div class="modal-program-actions">
-            <button id="programWebsiteBtn" type="button" style="display: none">
+      <div id="programmodal" class="modal" onclick="closeyswsmodal(event)">
+        <div class="modalbox" onclick="event.stopPropagation()">
+          <h2 id="programmodaltitle" style="margin: 0"></h2>
+          <p id="programmodaldesc" class="modaldesc"></p>
+          <div class="modalprogramactions">
+            <button id="programwebsitebtn" type="button" style="display: none">
               Website
             </button>
-            <button class="joined" type="button" onclick="closeYswsModal()">
+            <button class="joined" type="button" onclick="closeyswsmodal()">
               Close
             </button>
           </div>
@@ -154,116 +175,116 @@
       </div>
 
       <div id="step2" class="section" style="display: none">
-        <div class="top-bar">
+        <div class="topbar">
           <div class="user">
             <img id="avatar" class="avatar" alt="avatar" />
 
-            <div class="user-meta">
+            <div class="usermeta">
               <h2 id="hello"></h2>
-              <div class="slack-id-row">
+              <div class="slackidrow">
                 <button
-                  class="slack-id-text tap-copy"
+                  class="slackidtext tapcopy"
                   type="button"
                   aria-label="Copy Slack ID"
-                  onclick="copySlackId()"
+                  onclick="copyslackid()"
                 >
-                  Slack ID: <strong id="slackIdText">—</strong>
+                  Slack ID: <strong id="slackidtext">—</strong>
                 </button>
                 <button
-                  id="usernameCopyBtn"
-                  class="slack-id-text tap-copy"
+                  id="usernamecopybtn"
+                  class="slackidtext tapcopy"
                   type="button"
                   style="display: none"
                   aria-label="Copy Slack username"
-                  onclick="copyUsername()"
+                  onclick="copyusername()"
                 >
-                  Username: <strong id="usernameText">—</strong>
+                  Username: <strong id="usernametext">—</strong>
                 </button>
                 <button
-                  id="emailCopyBtn"
-                  class="slack-id-text tap-copy"
+                  id="emailcopybtn"
+                  class="slackidtext tapcopy"
                   type="button"
                   style="display: none"
                   aria-label="Copy email"
-                  onclick="copyEmail()"
+                  onclick="copyemail()"
                 >
-                  Email: <strong id="emailText">—</strong>
+                  Email: <strong id="emailtext">—</strong>
                 </button>
               </div>
-              <div class="verification-row">
-                <span id="verificationBadge" class="verification-pill unknown"
+              <div class="verificationrow">
+                <span id="verificationbadge" class="verificationpill unknown"
                   >Verification unknown</span
                 >
-                <span id="verificationDetail" class="verification-detail"
+                <span id="verificationdetail" class="verificationdetail"
                   >Status: unavailable</span
                 >
-                <span id="eligibilityDetail" class="verification-detail"
+                <span id="eligibilitydetail" class="verificationdetail"
                   >YSWS eligibility: unknown</span
                 >
               </div>
-              <p class="copy-hint">
+              <p class="copyhint">
                 Click Slack ID, username, or email to copy it.
               </p>
             </div>
           </div>
 
-          <div class="top-bar-actions">
-            <a id="logoutBtn" class="button-link joined" href="#" aria-label="Log out and switch account">Change account</a>
-            <a id="adminLink" class="button-link joined" href="./admin.html" style="display: none" aria-label="Open admin dashboard">Admin Dashboard</a>
+          <div class="topbaractions">
+            <a id="logoutbtn" class="buttonlink joined" href="#" aria-label="Log out and switch account">Change account</a>
+            <a id="adminlink" class="buttonlink joined" href="./admin.html" style="display: none" aria-label="Open admin dashboard">Admin Dashboard</a>
           </div>
         </div>
 
         <div class="dashboard">
           <div>
-            <div class="stats-grid">
+            <div class="statsgrid">
               <div class="stat">
-                <p class="stat-label">Joined channels</p>
-                <p id="joinedCount" class="stat-value">0</p>
+                <p class="statlabel">Joined channels</p>
+                <p id="joinedcount" class="statvalue">0</p>
               </div>
               <div class="stat">
-                <p class="stat-label">Remaining</p>
-                <p id="remainingCount" class="stat-value">0</p>
+                <p class="statlabel">Remaining</p>
+                <p id="remainingcount" class="statvalue">0</p>
               </div>
               <div class="stat">
-                <p class="stat-label">Total YSWSes</p>
-                <p id="totalCount" class="stat-value">0</p>
+                <p class="statlabel">Total YSWSes</p>
+                <p id="totalcount" class="statvalue">0</p>
               </div>
             </div>
 
-            <div class="progress-wrap" style="margin-top: 10px">
-              <p class="stat-label" style="margin: 0">Completion</p>
-              <p id="completionMeta" class="progress-meta">Complete a YSWS by joining the channel and filling the RSVP.</p>
-              <div class="progress-bar">
-                <div id="progressFill" class="progress-fill"></div>
+            <div class="progresswrap" style="margin-top: 10px">
+              <p class="statlabel" style="margin: 0">Completion</p>
+              <p id="completionmeta" class="progressmeta">Complete a YSWS by joining the channel and filling the RSVP.</p>
+              <div class="progressbar">
+                <div id="progressfill" class="progressfill"></div>
               </div>
             </div>
           </div>
 
           <div class="filters">
-            <label class="sr-only" for="searchYsws">Search YSWS</label>
+            <label class="sronly" for="searchysws">Search YSWS</label>
             <input
-              id="searchYsws"
-              class="search-input"
+              id="searchysws"
+              class="searchinput"
               type="search"
               placeholder="Search by YSWS or channel"
-              oninput="setSearch(this.value)"
+              oninput="setsearch(this.value)"
               autocomplete="off"
               spellcheck="false"
             />
             <button
-              id="filterAll"
+              id="filterall"
               class="chip active"
-              onclick="setFilter('all')"
+              onclick="setfilter('all')"
             >
               All
             </button>
-            <button id="filterTodo" class="chip" onclick="setFilter('todo')">
+            <button id="filtertodo" class="chip" onclick="setfilter('todo')">
               Need to join
             </button>
             <button
-              id="filterJoined"
+              id="filterjoined"
               class="chip"
-              onclick="setFilter('joined')"
+              onclick="setfilter('joined')"
             >
               Joined
             </button>
@@ -274,14 +295,14 @@
       </div>
 
       <footer class="footer">
-        <div class="footer-brand">
+        <div class="footerbrand">
           <img
-            class="hc-icon"
+            class="hcicon"
             src="https://user-cdn.hackclub-assets.com/019cf11f-eade-7304-ab15-71833ccc4c32/icon-rounded.svg"
             alt="Hack Club icon"
           />
           <div>
-            <p class="footer-copy">
+            <p class="footercopy">
               Made by
               <a
                 target="_blank"
@@ -290,8 +311,8 @@
                 >Dheeraj S</a
               >
             </p>
-            <p class="footer-disclaimer">Not an official HC app.</p>
-            <p class="footer-disclaimer">
+            <p class="footerdisclaimer">Not an official HC app.</p>
+            <p class="footerdisclaimer">
               Code is open source:
               <a
                 target="_blank"
@@ -302,7 +323,7 @@
             </p>
           </div>
         </div>
-        <p class="footer-note">
+        <p class="footernote">
           Are you an organizer for a YSWS?
           <a
             target="_blank"

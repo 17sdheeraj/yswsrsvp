@@ -1,422 +1,509 @@
-﻿      const API_BASE =
+      const apibase =
         window.__API_BASE__ || "https://ysws-rsvp-hca.sdheeraj.workers.dev";
-      const ADMIN_SLACK_ID = "U0828RTU7FE";
-      const DEFAULT_AVATAR =
+      const adminslackid = "U0828RTU7FE";
+      const defaultavatar =
         "https://user-cdn.hackclub-assets.com/019cf11f-eade-7304-ab15-71833ccc4c32/icon-rounded.svg";
-      const MEMBERSHIP_LOAD_ERROR =
+      const membershiploaderror =
         "Couldn't load your memberships right now. Slack might be on a coffee break, try again in a bit.";
-      const LOGIN_SESSION_ERROR =
+      const loginsessionerror =
         "Login completed, but your browser blocked the session cookie. Allow third-party cookies for this site or try a different browser, then log in again.";
-      const SESSION_TOKEN_STORAGE_KEY = "ysws_session_token";
+      const sessiontokenstoragekey = "ysws_session_token";
 
-      let yswsList = [];
-      let latestMembership = {};
-      let latestRsvpDone = {};
-      let currentFilter = "all";
-      let currentSearchQuery = "";
-      let currentSlackId = "";
-      let currentUsername = "";
-      let currentEmail = "";
-      let isAdminUser = false;
+      let yswslist = [];
+      let latestmembership = {};
+      let latestrsvpdone = {};
+      let currentfilter = "all";
+      let currentsearchquery = "";
+      let currentslackid = "";
+      let currentusername = "";
+      let currentemail = "";
+      let isadminuser = false;
 
-      const statusBox = document.getElementById("statusBox");
-      const supportBox = document.getElementById("supportBox");
-      const supportMessage = document.getElementById("supportMessage");
-      const usernameCopyBtn = document.getElementById("usernameCopyBtn");
-      const emailCopyBtn = document.getElementById("emailCopyBtn");
-      const yswsModal = document.getElementById("programModal");
-      const yswsModalTitle = document.getElementById("programModalTitle");
-      const yswsModalDesc = document.getElementById("programModalDesc");
-      const yswsWebsiteBtn = document.getElementById("programWebsiteBtn");
-      const adminLink = document.getElementById("adminLink");
+      const statusbox = document.getElementById("statusbox");
+      const supportbox = document.getElementById("supportbox");
+      const supportmessage = document.getElementById("supportmessage");
+      const authnavbtn = document.getElementById("authnavbtn");
+      const usernamecopybtn = document.getElementById("usernamecopybtn");
+      const emailcopybtn = document.getElementById("emailcopybtn");
+      const publicsection = document.getElementById("publicsection");
+      const yswsmodal = document.getElementById("programmodal");
+      const yswsmodaltitle = document.getElementById("programmodaltitle");
+      const yswsmodaldesc = document.getElementById("programmodaldesc");
+      const yswswebsitebtn = document.getElementById("programwebsitebtn");
+      const adminlink = document.getElementById("adminlink");
 
-      function api(path) {
-        return `${API_BASE}${path}`;
+      function isloginview() {
+        const path = window.location.pathname.replace(/\/+$/, "") || "/";
+        return path === "/login" || getqueryparam("view") === "login";
       }
 
-      function getSessionToken() {
-        const token = String(localStorage.getItem(SESSION_TOKEN_STORAGE_KEY) || "").trim();
+      function api(path) {
+        return `${apibase}${path}`;
+      }
+
+      function getsessiontoken() {
+        const token = String(localStorage.getItem(sessiontokenstoragekey) || "").trim();
         if (!token) return "";
         if (!/^[a-f0-9]{32,128}$/i.test(token)) {
-          clearSessionToken();
+          clearsessiontoken();
           return "";
         }
         return token;
       }
 
-      function setSessionToken(token) {
+      function setsessiontoken(token) {
         const next = String(token || "").trim();
         if (!next) return;
-        localStorage.setItem(SESSION_TOKEN_STORAGE_KEY, next);
+        localStorage.setItem(sessiontokenstoragekey, next);
       }
 
-      function clearSessionToken() {
-        localStorage.removeItem(SESSION_TOKEN_STORAGE_KEY);
+      function clearsessiontoken() {
+        localStorage.removeItem(sessiontokenstoragekey);
       }
 
-      function getAuthHeaders() {
-        const token = getSessionToken();
+      function getauthheaders() {
+        const token = getsessiontoken();
         return token ? { Authorization: `Bearer ${token}` } : {};
       }
 
-      async function apiGet(path) {
+      async function apiget(path) {
         return fetch(api(path), {
           credentials: "include",
           headers: {
-            ...getAuthHeaders(),
+            ...getauthheaders(),
           },
         });
       }
 
-      async function apiPost(path, body) {
+      async function apipost(path, body) {
         return fetch(api(path), {
           method: "POST",
           credentials: "include",
           headers: {
             "Content-Type": "application/json",
-            ...getAuthHeaders(),
+            ...getauthheaders(),
           },
           body: JSON.stringify(body),
         });
       }
 
-      function getSwalOptions(overrides = {}) {
+      function getswaloptions(overrides = {}) {
         return {
           background: "#111827",
           color: "#f8fafc",
           buttonsStyling: false,
           customClass: {
-            popup: "hc-swal-popup",
-            confirmButton: "swal-confirm-btn",
-            cancelButton: "swal-cancel-btn",
+            popup: "hcswalpopup",
+            confirmButton: "swalconfirmbtn",
+            cancelButton: "swalcancelbtn",
           },
           ...overrides,
         };
       }
 
-      async function showPopup({ icon = "info", title = "Notice", text = "" } = {}) {
+      async function showpopup({ icon = "info", title = "Notice", text = "" } = {}) {
         if (window.Swal) {
-          return window.Swal.fire(getSwalOptions({ icon, title, text, confirmButtonText: "OK" }));
+          return window.Swal.fire(getswaloptions({ icon, title, text, confirmButtonText: "OK" }));
         }
 
-        setStatus("error", text || title);
+        setstatus("error", text || title);
         return null;
       }
 
-      async function showRateLimitPopup(actionLabel, resetAtMs) {
-        const waitText = getRateLimitWaitText(resetAtMs);
-        await showPopup({
+      async function showratelimitpopup(actionlabel, resetatms) {
+        const waittext = getratelimitwaittext(resetatms);
+        await showpopup({
           icon: "warning",
           title: "Rate limited",
-          text: `Too many ${actionLabel}. Try again in ${waitText}.`,
+          text: `Too many ${actionlabel}. Try again in ${waittext}.`,
         });
       }
 
-      function normalizeExternalUrl(value) {
+      function normalizeexternalurl(value) {
         const url = String(value || "").trim();
         if (!url) return "";
         return /^[a-z][a-z0-9+.-]*:\/\//i.test(url) ? url : `https://${url}`;
       }
 
-      function setView(view) {
+      function setauthnavbutton(isloggedin) {
+        if (!authnavbtn) return;
+
+        const loggedin = !!isloggedin;
+        authnavbtn.dataset.authstate = loggedin ? "logout" : "login";
+        authnavbtn.textContent = loggedin ? "Logout" : "Login";
+        authnavbtn.href = loggedin ? api("/auth/logout") : "/login";
+        authnavbtn.setAttribute(
+          "aria-label",
+          loggedin ? "Log out and switch account" : "Log in with HC Auth",
+        );
+      }
+
+      function setview(view) {
         const loading = document.getElementById("loading");
+        const publichome = document.getElementById("publicsection");
         const step1 = document.getElementById("step1");
         const step2 = document.getElementById("step2");
 
         loading.style.display = view === "loading" ? "block" : "none";
+        publichome.style.display = view === "public" ? "block" : "none";
         step1.style.display = view === "auth" ? "block" : "none";
         step2.style.display = view === "app" ? "block" : "none";
       }
 
-      function setStats(joined, completed, total) {
+      function setstats(joined, completed, total) {
         const remaining = Math.max(0, total - completed);
         const percent = total ? Math.round((completed / total) * 100) : 0;
 
-        document.getElementById("joinedCount").textContent = String(joined);
-        document.getElementById("remainingCount").textContent = String(remaining);
-        document.getElementById("totalCount").textContent = String(total);
-        document.getElementById("progressFill").style.width = `${percent}%`;
-        document.getElementById("completionMeta").textContent = `${completed} of ${total} fully complete (${percent}%)`;
+        document.getElementById("joinedcount").textContent = String(joined);
+        document.getElementById("remainingcount").textContent = String(remaining);
+        document.getElementById("totalcount").textContent = String(total);
+        document.getElementById("progressfill").style.width = `${percent}%`;
+        document.getElementById("completionmeta").textContent = `${completed} of ${total} fully complete (${percent}%)`;
       }
 
-      async function readJson(response, fallback) {
+      async function readjson(response, fallback) {
         return response.json().catch(() => fallback);
       }
 
-      function getRateLimitWaitText(resetAtMs) {
-        if (!resetAtMs) return "a few minutes";
-        const remainingMs = Math.max(0, resetAtMs - Date.now());
-        const totalSeconds = Math.ceil(remainingMs / 1000);
-        const mins = Math.floor(totalSeconds / 60);
-        const secs = totalSeconds % 60;
+      function getratelimitwaittext(resetatms) {
+        if (!resetatms) return "a few minutes";
+        const remainingms = Math.max(0, resetatms - Date.now());
+        const totalseconds = Math.ceil(remainingms / 1000);
+        const mins = Math.floor(totalseconds / 60);
+        const secs = totalseconds % 60;
         if (mins > 0) return `${mins}m ${secs}s`;
         return `${secs}s`;
       }
 
-      function setStatus(type, msg) {
-        statusBox.className = "status";
+      function setstatus(type, msg) {
+        statusbox.className = "status";
 
         if (!msg) {
-          statusBox.textContent = "";
+          statusbox.textContent = "";
           return;
         }
 
-        statusBox.classList.add(type);
-        statusBox.textContent = msg;
+        statusbox.classList.add(type);
+        statusbox.textContent = msg;
       }
 
-      function setSupportMessage(message = "") {
-        supportMessage.value = message;
-        supportBox.classList.toggle("show", !!message);
+      function setsupportmessage(message = "") {
+        supportmessage.value = message;
+        supportbox.classList.toggle("show", !!message);
       }
 
-      async function copySupportMessage() {
-        const text = supportMessage.value.trim();
+      async function copysupportmessage() {
+        const text = supportmessage.value.trim();
         if (!text) return;
 
         try {
           await navigator.clipboard.writeText(text);
-          setStatus("success", "Copied! Paste it to Dheeraj S and we can debug this quickly.");
+          setstatus("success", "Copied! Paste it to Dheeraj S and we can debug this quickly.");
         } catch (_error) {
-          supportMessage.focus();
-          supportMessage.select();
-          setStatus("error", "Auto-copy tripped. Select the text and copy it manually.");
+          supportmessage.focus();
+          supportmessage.select();
+          setstatus("error", "Auto-copy tripped. Select the text and copy it manually.");
         }
       }
 
-      async function copyValue(text, successMessage) {
+      async function copyvalue(text, successmessage) {
         const value = (text || "").trim();
 
         if (!value) {
-          setStatus("error", "Value is not available yet.");
+          setstatus("error", "Value is not available yet.");
           return;
         }
 
         try {
           await navigator.clipboard.writeText(value);
-          setStatus("success", successMessage);
+          setstatus("success", successmessage);
         } catch (_error) {
-          setStatus("error", "Clipboard said nope — please copy manually.");
+          setstatus("error", "Clipboard said nope - please copy manually.");
         }
       }
 
-      async function copySlackId() {
-        await copyValue(currentSlackId, "Slack ID copied.");
+      async function copyslackid() {
+        await copyvalue(currentslackid, "Slack ID copied.");
       }
 
-      async function copyUsername() {
-        await copyValue(currentUsername, "Slack username copied.");
+      async function copyusername() {
+        await copyvalue(currentusername, "Slack username copied.");
       }
 
-      async function copyEmail() {
-        await copyValue(currentEmail, "Email copied.");
+      async function copyemail() {
+        await copyvalue(currentemail, "Email copied.");
       }
 
-      async function detectAdminAccess() {
+      async function detectadminaccess() {
         try {
-          const response = await apiGet("/api/admin/access");
+          const response = await apiget("/api/admin/access");
           if (!response.ok) return false;
-          const data = await readJson(response, { ok: false });
+          const data = await readjson(response, { ok: false });
           return !!data.ok;
         } catch (_error) {
           return false;
         }
       }
 
-      async function loadYswsList() {
-        if (yswsList.length) return true;
+      async function loadyswslist() {
+        if (yswslist.length) return true;
 
         try {
-          const response = await apiGet("/ysws.json");
+          const response = await apiget("/ysws.json");
           if (!response.ok) throw new Error("catalog_failed");
 
           const list = await response.json();
           if (!Array.isArray(list)) throw new Error("invalid_ysws_list");
 
-          yswsList = list
+          yswslist = list
             .filter((item) => item?.name && item?.form && item?.channel)
             .map((item) => ({
               name: String(item.name),
-              form: normalizeExternalUrl(item.form),
+              form: normalizeexternalurl(item.form),
               channel: String(item.channel),
               description: String(item.description || "No description added yet."),
-              website: normalizeExternalUrl(item.website),
+              website: normalizeexternalurl(item.website),
             }));
 
           return true;
         } catch (_error) {
-          setStatus("error", "Couldn't load the YSWS list. Give it a refresh and we'll try again.");
+          setstatus("error", "Couldn't load the YSWS list. Give it a refresh and we'll try again.");
           return false;
         }
       }
 
-      function openYswsModal(channel) {
-        const ysws = yswsList.find((entry) => entry.channel === channel);
+      function openyswsmodal(channel) {
+        const ysws = yswslist.find((entry) => entry.channel === channel);
         if (!ysws) return;
 
-        yswsModalTitle.textContent = ysws.name;
-        yswsModalDesc.textContent = ysws.description || "No description added yet.";
+        yswsmodaltitle.textContent = ysws.name;
+        yswsmodaldesc.textContent = ysws.description || "No description added yet.";
 
         if (ysws.website) {
-          yswsWebsiteBtn.style.display = "inline-flex";
-          yswsWebsiteBtn.onclick = () => window.open(ysws.website, "_blank");
+          yswswebsitebtn.style.display = "inline-flex";
+          yswswebsitebtn.onclick = () => window.open(ysws.website, "_blank");
         } else {
-          yswsWebsiteBtn.style.display = "none";
-          yswsWebsiteBtn.onclick = null;
+          yswswebsitebtn.style.display = "none";
+          yswswebsitebtn.onclick = null;
         }
 
-        yswsModal.classList.add("show");
+        yswsmodal.classList.add("show");
       }
 
-      function closeYswsModal(event) {
-        if (event && event.target !== yswsModal) return;
-        yswsModal.classList.remove("show");
+      function closeyswsmodal(event) {
+        if (event && event.target !== yswsmodal) return;
+        yswsmodal.classList.remove("show");
       }
 
-      function getQueryParam(name) {
+      function getqueryparam(name) {
         return new URLSearchParams(window.location.search).get(name) || "";
       }
 
-      function clearOauthErrorFromUrl() {
-        const nextUrl = new URL(window.location.href);
-        nextUrl.searchParams.delete("oauth_error");
-        window.history.replaceState({}, "", nextUrl.pathname + nextUrl.search + nextUrl.hash);
+      function clearoautherrorfromurl() {
+        const nexturl = new URL(window.location.href);
+        nexturl.searchParams.delete("oauth_error");
+        window.history.replaceState({}, "", nexturl.pathname + nexturl.search + nexturl.hash);
       }
 
-      function clearAuthAttemptFromUrl() {
-        const nextUrl = new URL(window.location.href);
-        nextUrl.searchParams.delete("auth_attempted");
-        window.history.replaceState({}, "", nextUrl.pathname + nextUrl.search + nextUrl.hash);
+      function clearauthattemptfromurl() {
+        const nexturl = new URL(window.location.href);
+        nexturl.searchParams.delete("auth_attempted");
+        window.history.replaceState({}, "", nexturl.pathname + nexturl.search + nexturl.hash);
       }
 
-      function consumeSessionTokenFromUrl() {
-        const nextUrl = new URL(window.location.href);
-        const sessionToken = String(nextUrl.searchParams.get("session_token") || "").trim();
-        if (!sessionToken) return false;
-        setSessionToken(sessionToken);
-        nextUrl.searchParams.delete("session_token");
-        window.history.replaceState({}, "", nextUrl.pathname + nextUrl.search + nextUrl.hash);
+      function consumesessiontokenfromurl() {
+        const nexturl = new URL(window.location.href);
+        const sessiontoken = String(nexturl.searchParams.get("session_token") || "").trim();
+        if (!sessiontoken) return false;
+        setsessiontoken(sessiontoken);
+        nexturl.searchParams.delete("session_token");
+        window.history.replaceState({}, "", nexturl.pathname + nexturl.search + nexturl.hash);
         return true;
       }
 
-      function showLoggedOut(message = "") {
-        setView("auth");
+      function showloggedout(message = "", forceloginview = false) {
+        const useloginview = forceloginview || isloginview();
+        setview(useloginview ? "auth" : "public");
+        setauthnavbutton(!!getsessiontoken());
         document.getElementById("programs").innerHTML = "";
 
-        latestMembership = {};
-        latestRsvpDone = {};
-        currentSlackId = "";
-        currentUsername = "";
-        currentEmail = "";
+        if (!useloginview && yswslist.length) {
+          renderpublicysws();
+        }
+
+        latestmembership = {};
+        latestrsvpdone = {};
+        currentslackid = "";
+        currentusername = "";
+        currentemail = "";
 
         document.getElementById("hello").textContent = "";
         document.getElementById("avatar").removeAttribute("src");
-        document.getElementById("slackIdText").textContent = "—";
-        document.getElementById("usernameText").textContent = "—";
-        document.getElementById("emailText").textContent = "—";
-        updateVerificationUi({
+        document.getElementById("slackidtext").textContent = "-";
+        document.getElementById("usernametext").textContent = "-";
+        document.getElementById("emailtext").textContent = "-";
+        updateverificationui({
           isVerified: null,
           verificationLabel: "Verification unknown",
           verificationStatus: "",
           yswsEligible: null,
         });
-        usernameCopyBtn.style.display = "none";
-        emailCopyBtn.style.display = "none";
-        adminLink.style.display = "none";
+        usernamecopybtn.style.display = "none";
+        emailcopybtn.style.display = "none";
+        adminlink.style.display = "none";
 
-        const searchInput = document.getElementById("searchYsws");
-        if (searchInput) searchInput.value = "";
-        currentSearchQuery = "";
+        const searchinput = document.getElementById("searchysws");
+        if (searchinput) searchinput.value = "";
+        currentsearchquery = "";
 
-        setStats(0, 0, 0);
-        setFilter("all");
-        setStatus(message ? "error" : "", message);
+        setstats(0, 0, 0);
+        setfilter("all");
+        setstatus(message ? "error" : "", message);
       }
 
-      async function loadDashboard({ authAttempted = false } = {}) {
-        setView("loading");
-        setStatus("", "");
+      function renderpublicysws() {
+        const grid = document.getElementById("publicprograms");
+        if (!grid) return;
 
-        const yswsReady = await loadYswsList();
-        if (!yswsReady) {
-          showLoggedOut("Could not load the YSWS list. Please refresh and try again.");
+        grid.innerHTML = "";
+
+        const rows = [...yswslist].sort((a, b) => a.name.localeCompare(b.name));
+
+        rows.forEach((ysws) => {
+          const card = document.createElement("div");
+          card.className = "card";
+
+          const cardhead = document.createElement("div");
+          cardhead.className = "cardhead";
+
+          const title = document.createElement("h3");
+          title.textContent = ysws.name;
+
+          const channelid = document.createElement("span");
+          channelid.className = "channelid";
+          channelid.textContent = ysws.channel;
+
+          cardhead.append(title, channelid);
+
+          const copy = document.createElement("p");
+          copy.className = "muted";
+          copy.textContent = "Open the channel, then complete your RSVP form.";
+
+          const actions = document.createElement("div");
+          actions.className = "actions";
+
+          const channelbutton = document.createElement("button");
+          channelbutton.textContent = "Open channel";
+          channelbutton.addEventListener("click", () => {
+            window.open(
+              `https://hackclub.enterprise.slack.com/archives/${ysws.channel}`,
+              "_blank",
+            );
+          });
+
+          const formbutton = document.createElement("button");
+          formbutton.textContent = "Fill RSVP";
+          formbutton.addEventListener("click", () => window.open(ysws.form, "_blank"));
+
+          const modalbutton = document.createElement("button");
+          modalbutton.className = "joined descriptionbtn";
+          modalbutton.type = "button";
+          modalbutton.textContent = "Description";
+          modalbutton.addEventListener("click", () => openyswsmodal(ysws.channel));
+
+          actions.append(channelbutton, formbutton, modalbutton);
+          card.append(cardhead, copy, actions);
+          grid.appendChild(card);
+        });
+      }
+
+      async function loaddashboard({ authattempted = false } = {}) {
+        setview("loading");
+        setstatus("", "");
+
+        const yswsready = await loadyswslist();
+        if (!yswsready) {
+          showloggedout("Could not load the YSWS list. Please refresh and try again.");
           return;
         }
 
-        let userResponse;
+        let userresponse;
         try {
-          userResponse = await apiGet("/api/user");
+          userresponse = await apiget("/api/user");
         } catch (_error) {
-          showLoggedOut(MEMBERSHIP_LOAD_ERROR);
+          showloggedout(membershiploaderror);
           return;
         }
 
-        if (!userResponse.ok) {
-          showLoggedOut(
-            userResponse.status === 401 || userResponse.status === 403
-              ? authAttempted
-                ? LOGIN_SESSION_ERROR
+        if (!userresponse.ok) {
+          showloggedout(
+            userresponse.status === 401 || userresponse.status === 403
+              ? authattempted
+                ? loginsessionerror
                 : ""
-              : MEMBERSHIP_LOAD_ERROR,
+              : membershiploaderror,
+            authattempted,
           );
           return;
         }
 
-        const user = await readJson(userResponse, { ok: false });
+        const user = await readjson(userresponse, { ok: false });
         if (!user.ok) {
-          showLoggedOut(
+          showloggedout(
             user.error === "not_authenticated"
-              ? authAttempted
-                ? LOGIN_SESSION_ERROR
+              ? authattempted
+                ? loginsessionerror
                 : ""
-              : MEMBERSHIP_LOAD_ERROR,
+              : membershiploaderror,
+            authattempted,
           );
           return;
         }
 
-        setView("app");
-        setSupportMessage("");
+        setview("app");
+        setauthnavbutton(true);
+        setsupportmessage("");
 
         document.getElementById("hello").textContent = `Hi ${user.name || "there"}!`;
-        document.getElementById("avatar").src = user.avatar || DEFAULT_AVATAR;
+        document.getElementById("avatar").src = user.avatar || defaultavatar;
 
-        currentSlackId = String(user.slackId || "").trim().toUpperCase();
-        currentUsername = String(user.username || "").trim();
-        currentEmail = String(user.email || "").trim();
-        isAdminUser = currentSlackId === ADMIN_SLACK_ID;
+        currentslackid = String(user.slackId || "").trim().toUpperCase();
+        currentusername = String(user.username || "").trim();
+        currentemail = String(user.email || "").trim();
+        isadminuser = currentslackid === adminslackid;
 
-        document.getElementById("slackIdText").textContent = currentSlackId || "—";
-        document.getElementById("usernameText").textContent = currentUsername || "—";
-        document.getElementById("emailText").textContent = currentEmail || "—";
-        usernameCopyBtn.style.display = currentUsername ? "inline-flex" : "none";
-        emailCopyBtn.style.display = currentEmail ? "inline-flex" : "none";
-        updateVerificationUi(user);
+        document.getElementById("slackidtext").textContent = currentslackid || "-";
+        document.getElementById("usernametext").textContent = currentusername || "-";
+        document.getElementById("emailtext").textContent = currentemail || "-";
+        usernamecopybtn.style.display = currentusername ? "inline-flex" : "none";
+        emailcopybtn.style.display = currentemail ? "inline-flex" : "none";
+        updateverificationui(user);
 
-        latestMembership = user.membership || {};
-        latestRsvpDone = user.rsvpDone || {};
+        latestmembership = user.membership || {};
+        latestrsvpdone = user.rsvpDone || {};
 
-        if (!isAdminUser) {
-          isAdminUser = await detectAdminAccess();
+        if (!isadminuser) {
+          isadminuser = await detectadminaccess();
         }
-        adminLink.style.display = isAdminUser ? "inline-flex" : "none";
+        adminlink.style.display = isadminuser ? "inline-flex" : "none";
 
-        renderYsws();
+        renderysws();
       }
 
-      function updateVerificationUi(user) {
-        const badge = document.getElementById("verificationBadge");
-        const detail = document.getElementById("verificationDetail");
-        const eligibility = document.getElementById("eligibilityDetail");
+      function updateverificationui(user) {
+        const badge = document.getElementById("verificationbadge");
+        const detail = document.getElementById("verificationdetail");
+        const eligibility = document.getElementById("eligibilitydetail");
         const isVerified = typeof user?.isVerified === "boolean" ? user.isVerified : null;
         const yswsEligible = typeof user?.yswsEligible === "boolean" ? user.yswsEligible : null;
         const label = String(user?.verificationLabel || "Verification unknown").trim();
-        const rawStatus = String(user?.verificationStatus || "").trim().replace(/[_-]+/g, " ");
+        const rawstatus = String(user?.verificationStatus || "").trim().replace(/[_-]+/g, " ");
 
-        badge.className = `verification-pill ${
-          isVerified === true ? "verified" : isVerified === false ? "not-verified" : "unknown"
+        badge.className = `verificationpill ${
+          isVerified === true ? "verified" : isVerified === false ? "notverified" : "unknown"
         }`;
         badge.textContent = `Verification: ${label}`;
-        detail.textContent = rawStatus ? `Status: ${rawStatus}` : "Status: unavailable";
+        detail.textContent = rawstatus ? `Status: ${rawstatus}` : "Status: unavailable";
         eligibility.textContent =
           yswsEligible === true
             ? "YSWS eligibility: eligible"
@@ -425,131 +512,131 @@
               : "YSWS eligibility: unknown";
       }
 
-      function setFilter(nextFilter) {
-        currentFilter = nextFilter;
+      function setfilter(nextfilter) {
+        currentfilter = nextfilter;
 
-        document.getElementById("filterAll").classList.toggle("active", nextFilter === "all");
-        document.getElementById("filterTodo").classList.toggle("active", nextFilter === "todo");
-        document.getElementById("filterJoined").classList.toggle("active", nextFilter === "joined");
+        document.getElementById("filterall").classList.toggle("active", nextfilter === "all");
+        document.getElementById("filtertodo").classList.toggle("active", nextfilter === "todo");
+        document.getElementById("filterjoined").classList.toggle("active", nextfilter === "joined");
 
-        renderYsws();
+        renderysws();
       }
 
-      function setSearch(value) {
-        currentSearchQuery = String(value || "").trim().toLowerCase();
-        renderYsws();
+      function setsearch(value) {
+        currentsearchquery = String(value || "").trim().toLowerCase();
+        renderysws();
       }
 
-      function renderYsws() {
-        const yswsGrid = document.getElementById("programs");
-        yswsGrid.innerHTML = "";
+      function renderysws() {
+        const yswsgrid = document.getElementById("programs");
+        yswsgrid.innerHTML = "";
 
-        const rows = yswsList
+        const rows = yswslist
           .map((item) => ({
             ...item,
-            joined: !!latestMembership[item.channel],
-            rsvpDone: !!latestRsvpDone[item.channel],
+            joined: !!latestmembership[item.channel],
+            rsvpDone: !!latestrsvpdone[item.channel],
           }))
           .filter((item) => {
-            if (currentFilter === "joined") return item.joined;
-            if (currentFilter === "todo") return !item.joined;
+            if (currentfilter === "joined") return item.joined;
+            if (currentfilter === "todo") return !item.joined;
             return true;
           })
           .filter((item) => {
-            if (!currentSearchQuery) return true;
+            if (!currentsearchquery) return true;
             return (
-              item.name.toLowerCase().includes(currentSearchQuery) ||
-              item.channel.toLowerCase().includes(currentSearchQuery)
+              item.name.toLowerCase().includes(currentsearchquery) ||
+              item.channel.toLowerCase().includes(currentsearchquery)
             );
           })
           .sort((a, b) => Number(a.joined) - Number(b.joined) || a.name.localeCompare(b.name));
 
-        const joinedCount = yswsList.filter((item) => latestMembership[item.channel]).length;
-        const completedCount = yswsList.filter(
-          (item) => latestMembership[item.channel] && latestRsvpDone[item.channel],
+        const joinedcount = yswslist.filter((item) => latestmembership[item.channel]).length;
+        const completedcount = yswslist.filter(
+          (item) => latestmembership[item.channel] && latestrsvpdone[item.channel],
         ).length;
-        setStats(joinedCount, completedCount, yswsList.length);
+        setstats(joinedcount, completedcount, yswslist.length);
 
         if (!rows.length) {
           const empty = document.createElement("div");
           empty.className = "card";
           empty.innerHTML = "<h3>Nothing here</h3><p class='muted'>No matches right now - try a different filter or search.</p>";
-          yswsGrid.appendChild(empty);
+          yswsgrid.appendChild(empty);
           return;
         }
 
         rows.forEach((ysws) => {
           const card = document.createElement("div");
-          const isComplete = ysws.joined && ysws.rsvpDone;
-          const isPartial = ysws.joined || ysws.rsvpDone;
-          card.className = `card${isComplete ? " card-complete" : isPartial ? " card-partial" : ""}`;
+          const iscomplete = ysws.joined && ysws.rsvpDone;
+          const ispartial = ysws.joined || ysws.rsvpDone;
+          card.className = `card${iscomplete ? " cardcomplete" : ispartial ? " cardpartial" : ""}`;
 
-          const cardHead = document.createElement("div");
-          cardHead.className = "card-head";
+          const cardhead = document.createElement("div");
+          cardhead.className = "cardhead";
 
-          const titleGroup = document.createElement("div");
-          titleGroup.className = "card-title-group";
+          const titlegroup = document.createElement("div");
+          titlegroup.className = "cardtitlegroup";
 
           const title = document.createElement("h3");
           title.textContent = ysws.name;
 
-          const channelId = document.createElement("span");
-          channelId.className = "channel-id";
-          channelId.textContent = ysws.channel;
+          const channelid = document.createElement("span");
+          channelid.className = "channelid";
+          channelid.textContent = ysws.channel;
 
-          const rsvpToggle = document.createElement("button");
-          rsvpToggle.type = "button";
-          rsvpToggle.className = `rsvp-toggle${ysws.rsvpDone ? " is-checked" : ""}`;
-          rsvpToggle.setAttribute(
+          const rsvptoggle = document.createElement("button");
+          rsvptoggle.type = "button";
+          rsvptoggle.className = `rsvptoggle${ysws.rsvpDone ? " ischecked" : ""}`;
+          rsvptoggle.setAttribute(
             "aria-label",
             ysws.rsvpDone ? `Unmark RSVP done for ${ysws.name}` : `Mark RSVP done for ${ysws.name}`,
           );
-          rsvpToggle.title = ysws.rsvpDone ? "Undo RSVP done" : "Mark RSVP done";
-          rsvpToggle.addEventListener("click", () => toggleRsvpDone(ysws.channel, !ysws.rsvpDone, rsvpToggle, ysws.name));
+          rsvptoggle.title = ysws.rsvpDone ? "Undo RSVP done" : "Mark RSVP done";
+          rsvptoggle.addEventListener("click", () => togglersvpdone(ysws.channel, !ysws.rsvpDone, rsvptoggle, ysws.name));
 
-          titleGroup.append(title, channelId);
-          cardHead.append(titleGroup, rsvpToggle);
+          titlegroup.append(title, channelid);
+          cardhead.append(titlegroup, rsvptoggle);
 
-          card.appendChild(cardHead);
+          card.appendChild(cardhead);
 
           const actions = document.createElement("div");
           actions.className = "actions";
 
-          const joinButton = document.createElement("button");
+          const joinbutton = document.createElement("button");
           if (ysws.joined) {
-            joinButton.classList.add("joined");
-            joinButton.disabled = true;
-            joinButton.textContent = "Joined";
+            joinbutton.classList.add("joined");
+            joinbutton.disabled = true;
+            joinbutton.textContent = "Joined";
           } else {
-            joinButton.textContent = "Add me to channel";
-            joinButton.addEventListener("click", () => joinYsws(ysws.channel, joinButton, ysws.name));
+            joinbutton.textContent = "Add me to channel";
+            joinbutton.addEventListener("click", () => joinysws(ysws.channel, joinbutton, ysws.name));
           }
 
-          const formButton = document.createElement("button");
-          formButton.textContent = "Fill RSVP";
-          formButton.addEventListener("click", () => window.open(ysws.form, "_blank"));
+          const formbutton = document.createElement("button");
+          formbutton.textContent = "Fill RSVP";
+          formbutton.addEventListener("click", () => window.open(ysws.form, "_blank"));
 
-          const modalButton = document.createElement("button");
-          modalButton.className = "joined description-btn";
-          modalButton.type = "button";
-          modalButton.textContent = "Description";
-          modalButton.addEventListener("click", () => openYswsModal(ysws.channel));
+          const modalbutton = document.createElement("button");
+          modalbutton.className = "joined descriptionbtn";
+          modalbutton.type = "button";
+          modalbutton.textContent = "Description";
+          modalbutton.addEventListener("click", () => openyswsmodal(ysws.channel));
 
-          actions.append(joinButton, formButton, modalButton);
+          actions.append(joinbutton, formbutton, modalbutton);
           card.appendChild(actions);
-          yswsGrid.appendChild(card);
+          yswsgrid.appendChild(card);
         });
       }
 
-      async function toggleRsvpDone(channel, done, btn, yswsName) {
+      async function togglersvpdone(channel, done, btn, yswsname) {
         btn.disabled = true;
-        btn.classList.add("is-loading");
+        btn.classList.add("isloading");
 
         let data = { ok: false };
         let response;
 
         try {
-          response = await apiPost("/api/rsvp", { channel, done });
+          response = await apipost("/api/rsvp", { channel, done });
           data = await response.json().catch(() => ({ ok: false }));
         } catch (_error) {
           data = { ok: false };
@@ -557,30 +644,30 @@
 
         if (!response?.ok || !data.ok) {
           btn.disabled = false;
-          btn.classList.remove("is-loading");
-          const resetAtHeader = Number(response?.headers?.get("X-RateLimit-Reset") || 0);
-          const rateLimitMessage =
+          btn.classList.remove("isloading");
+          const resetatheader = Number(response?.headers?.get("X-RateLimit-Reset") || 0);
+          const ratelimitmessage =
             response?.status === 429
-              ? `Too many RSVP updates. Try again in ${getRateLimitWaitText(resetAtHeader)}.`
+              ? `Too many RSVP updates. Try again in ${getratelimitwaittext(resetatheader)}.`
               : "";
           if (response?.status === 429) {
-            await showRateLimitPopup("RSVP updates", resetAtHeader);
+            await showratelimitpopup("RSVP updates", resetatheader);
           }
-          setStatus(
+          setstatus(
             "error",
-            rateLimitMessage ||
+            ratelimitmessage ||
               data.message ||
-              `Couldn't ${done ? "save" : "undo"} your RSVP completion for ${yswsName} right now.`,
+              `Couldn't ${done ? "save" : "undo"} your RSVP completion for ${yswsname} right now.`,
           );
           return;
         }
 
-        latestRsvpDone = data.rsvpDone || { ...latestRsvpDone, [channel]: done };
-        renderYsws();
-        setStatus("success", done ? `Marked ${yswsName} RSVP as done.` : `Removed the RSVP done mark for ${yswsName}.`);
+        latestrsvpdone = data.rsvpDone || { ...latestrsvpdone, [channel]: done };
+        renderysws();
+        setstatus("success", done ? `Marked ${yswsname} RSVP as done.` : `Removed the RSVP done mark for ${yswsname}.`);
       }
 
-      async function joinYsws(channel, btn, yswsName) {
+      async function joinysws(channel, btn, yswsname) {
         btn.innerText = "Joining channel...";
         btn.disabled = true;
 
@@ -588,7 +675,7 @@
         let response;
 
         try {
-          response = await apiPost("/api/join", { channel });
+          response = await apipost("/api/join", { channel });
           data = await response.json().catch(() => ({ ok: false }));
         } catch (_error) {
           data = { ok: false };
@@ -597,58 +684,76 @@
         if (!response?.ok || !data.ok) {
           btn.innerText = "Try again";
           btn.disabled = false;
-          const resetAtHeader = Number(response?.headers?.get("X-RateLimit-Reset") || 0);
-          const rateLimitMessage =
+          const resetatheader = Number(response?.headers?.get("X-RateLimit-Reset") || 0);
+          const ratelimitmessage =
             response?.status === 429
-              ? `Too many requests. Try again in ${getRateLimitWaitText(resetAtHeader)}.`
+              ? `Too many requests. Try again in ${getratelimitwaittext(resetatheader)}.`
               : "";
           if (response?.status === 429) {
-            await showRateLimitPopup("join requests", resetAtHeader);
+            await showratelimitpopup("join requests", resetatheader);
           }
-          setStatus(
+          setstatus(
             "error",
-            rateLimitMessage ||
+            ratelimitmessage ||
               data.message ||
-              `Couldn't add you to ${yswsName} right now. If this keeps happening, ask an organizer to add the bot to the channel.`,
+              `Couldn't add you to ${yswsname} right now. If this keeps happening, ask an organizer to add the bot to the channel.`,
           );
           return;
         }
 
-        latestMembership[channel] = true;
-        renderYsws();
-        setStatus("success", `You were added to ${yswsName}.`);
+        latestmembership[channel] = true;
+        renderysws();
+        setstatus("success", `You were added to ${yswsname}.`);
       }
 
-      async function boot() {
-        document.getElementById("loginBtn").href = api("/auth/start");
-        document.getElementById("logoutBtn").href = api("/auth/logout");
-        document.getElementById("logoutBtn").addEventListener("click", clearSessionToken);
-
-        consumeSessionTokenFromUrl();
-        const authAttempted = getQueryParam("auth_attempted") === "1";
-        if (authAttempted) {
-          clearAuthAttemptFromUrl();
+      async function bootapp() {
+        document.getElementById("loginbtn").href = api("/auth/start");
+        document.getElementById("logoutbtn").href = api("/auth/logout");
+        document.getElementById("logoutbtn").addEventListener("click", clearsessiontoken);
+        if (authnavbtn) {
+          authnavbtn.addEventListener("click", () => {
+            if (authnavbtn.dataset.authstate === "logout") {
+              clearsessiontoken();
+            }
+          });
         }
 
-        const oauthError = getQueryParam("oauth_error");
-        if (oauthError) {
-          showLoggedOut("HC login failed. If this keeps happening, send the details below to Dheeraj S.");
-          setSupportMessage(decodeURIComponent(oauthError));
-          clearOauthErrorFromUrl();
+        consumesessiontokenfromurl();
+        setauthnavbutton(!!getsessiontoken());
+        const authattempted = getqueryparam("auth_attempted") === "1";
+        if (authattempted) {
+          clearauthattemptfromurl();
+        }
+
+        const oautherror = getqueryparam("oauth_error");
+        if (oautherror) {
+          showloggedout("HC login failed. If this keeps happening, send the details below to Dheeraj S.", true);
+          setsupportmessage(decodeURIComponent(oautherror));
+          clearoautherrorfromurl();
           return;
         }
 
-        setSupportMessage("");
-        await loadDashboard({ authAttempted });
+        const yswsready = await loadyswslist();
+        if (!yswsready) {
+          showloggedout("Could not load the YSWS list. Please refresh and try again.");
+          return;
+        }
+
+        if (!isloginview()) {
+          renderpublicysws();
+        }
+
+        setsupportmessage("");
+        await loaddashboard({ authattempted });
       }
 
-      window.setFilter = setFilter;
-      window.copySupportMessage = copySupportMessage;
-      window.copySlackId = copySlackId;
-      window.copyUsername = copyUsername;
-      window.copyEmail = copyEmail;
-      window.openYswsModal = openYswsModal;
-      window.closeYswsModal = closeYswsModal;
-      window.setSearch = setSearch;
+      window.setfilter = setfilter;
+      window.copysupportmessage = copysupportmessage;
+      window.copyslackid = copyslackid;
+      window.copyusername = copyusername;
+      window.copyemail = copyemail;
+      window.openyswsmodal = openyswsmodal;
+      window.closeyswsmodal = closeyswsmodal;
+      window.setsearch = setsearch;
 
-      boot();
+      bootapp();

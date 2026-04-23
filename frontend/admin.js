@@ -1,59 +1,59 @@
-      const API_BASE =
+      const apibase =
         window.__API_BASE__ || "https://ysws-rsvp-hca.sdheeraj.workers.dev";
-      const NO_ACCESS_URL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
-      const SESSION_TOKEN_STORAGE_KEY = "ysws_session_token";
+      const noaccessurl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+      const sessiontokenstoragekey = "ysws_session_token";
 
       function api(path) {
-        return `${API_BASE}${path}`;
+        return `${apibase}${path}`;
       }
 
-      function getSessionToken() {
-        const token = String(localStorage.getItem(SESSION_TOKEN_STORAGE_KEY) || "").trim();
+      function getsessiontoken() {
+        const token = String(localStorage.getItem(sessiontokenstoragekey) || "").trim();
         if (!token) return "";
         if (!/^[a-f0-9]{32,128}$/i.test(token)) {
-          localStorage.removeItem(SESSION_TOKEN_STORAGE_KEY);
+          localStorage.removeItem(sessiontokenstoragekey);
           return "";
         }
         return token;
       }
 
-      function getAuthHeaders() {
-        const token = getSessionToken();
+      function getauthheaders() {
+        const token = getsessiontoken();
         return token ? { Authorization: `Bearer ${token}` } : {};
       }
 
-      async function apiFetch(path, init = {}) {
-        const baseHeaders = getAuthHeaders();
-        const nextHeaders = {
-          ...baseHeaders,
+      async function apifetch(path, init = {}) {
+        const baseheaders = getauthheaders();
+        const nextheaders = {
+          ...baseheaders,
           ...(init.headers || {}),
         };
         return fetch(api(path), {
           ...init,
           credentials: "include",
-          headers: nextHeaders,
+          headers: nextheaders,
         });
       }
 
-      async function apiGet(path) {
-        return apiFetch(path);
+      async function apiget(path) {
+        return apifetch(path);
       }
 
-      async function readJson(response, fallback) {
+      async function readjson(response, fallback) {
         return response.json().catch(() => fallback);
       }
 
-      function formatPercent(value) {
+      function formatpercent(value) {
         return `${Number(value || 0).toFixed(1).replace(/\.0$/, "")}%`;
       }
 
-      function formatDateTime(value) {
+      function formatdatetime(value) {
         const date = new Date(value);
         if (Number.isNaN(date.getTime())) return "Unknown time";
         return date.toLocaleString();
       }
 
-      function getSwalOptions(overrides = {}) {
+      function getswaloptions(overrides = {}) {
         return {
           background: "#111827",
           color: "#f8fafc",
@@ -67,78 +67,78 @@
         };
       }
 
-      async function showPopup({ icon = "info", title = "Notice", text = "" } = {}) {
+      async function showpopup({ icon = "info", title = "Notice", text = "" } = {}) {
         if (window.Swal) {
-          return window.Swal.fire(getSwalOptions({ icon, title, text, confirmButtonText: "OK" }));
+          return window.Swal.fire(getswaloptions({ icon, title, text, confirmButtonText: "OK" }));
         }
 
-        setStatus("error", text || title);
+        setstatus("error", text || title);
         return null;
       }
 
-      async function showConfirm({ title, text, confirmButtonText = "Continue", cancelButtonText = "Cancel" }) {
+      async function showconfirm({ title, text, confirmbuttontext = "Continue", cancelbuttontext = "Cancel" }) {
         if (window.Swal) {
           return window.Swal.fire(
-            getSwalOptions({
+            getswaloptions({
               icon: "question",
               title,
               text,
               showCancelButton: true,
-              confirmButtonText,
-              cancelButtonText,
+              confirmButtonText: confirmbuttontext,
+              cancelButtonText: cancelbuttontext,
               reverseButtons: true,
               focusCancel: true,
             }),
           );
         }
 
-        setStatus("error", text || title || "Confirmation dialog unavailable.");
+        setstatus("error", text || title || "Confirmation dialog unavailable.");
         return { isConfirmed: false };
       }
 
-      const statusBox = document.getElementById("adminStatus");
-      const auditList = document.getElementById("adminAuditList");
-      const auditMeta = document.getElementById("adminAuditMeta");
-      const errorCodes = document.getElementById("adminErrorCodes");
-      const authRate = document.getElementById("adminAuthRate");
-      const authMeta = document.getElementById("adminAuthMeta");
-      const joinRate = document.getElementById("adminJoinRate");
-      const joinMeta = document.getElementById("adminJoinMeta");
-      const errorCount = document.getElementById("adminErrorCount");
-      const rateLimitMeta = document.getElementById("adminRateLimitMeta");
-      const rsvpRateLimitMeta = document.getElementById("adminRsvpRateLimitMeta");
-      const retentionNote = document.getElementById("adminRetentionNote");
-      const refreshBtn = document.getElementById("refreshAdminBtn");
-      const adminPanel = document.getElementById("adminPanel");
-      const adminNoAccess = document.getElementById("adminNoAccess");
-      const viewAsModal = document.getElementById("viewAsModal");
-      const viewAsModalContent = document.getElementById("viewAsModalContent");
-      const viewAsModalStatus = document.getElementById("viewAsModalStatus");
-      const SOURCE_CODE_URL = "https://github.com/17sdheeraj/yswsrsvp";
-      let yswsCatalog = [];
-      let viewAsState = null;
-      let currentAuditPage = 1;
-      const auditPerPage = 5;
-      let allAuditEvents = [];
+      const statusbox = document.getElementById("adminstatus");
+      const auditlist = document.getElementById("adminauditlist");
+      const auditmeta = document.getElementById("adminauditmeta");
+      const errorcodes = document.getElementById("adminerrorcodes");
+      const authrate = document.getElementById("adminauthrate");
+      const authmeta = document.getElementById("adminauthmeta");
+      const joinrate = document.getElementById("adminjoinrate");
+      const joinmeta = document.getElementById("adminjoinmeta");
+      const errorcount = document.getElementById("adminerrorcount");
+      const ratelimitmeta = document.getElementById("adminratelimitmeta");
+      const rsvpratelimitmeta = document.getElementById("adminrsvpratelimitmeta");
+      const retentionnote = document.getElementById("adminretentionnote");
+      const refreshbtn = document.getElementById("refreshadminbtn");
+      const adminpanel = document.getElementById("adminpanel");
+      const adminnoaccess = document.getElementById("adminnoaccess");
+      const viewasmodal = document.getElementById("viewasmodal");
+      const viewasmodalcontent = document.getElementById("viewasmodalcontent");
+      const viewasmodalstatus = document.getElementById("viewasmodalstatus");
+      const sourcecodeurl = "https://github.com/17sdheeraj/yswsrsvp";
+      let yswscatalog = [];
+      let viewasstate = null;
+      let currentauditpage = 1;
+      const auditperpage = 5;
+      let allauditevents = [];
 
-      function renderNoAccess(code = "admin_only") {
+      function rendernoaccess(code = "admin_only") {
         const message =
           "ay! what are you doing here, stop poking around the admin dashboard theres nothing here for you to see. if you want check out the sourcecode";
 
-        adminPanel.style.display = "none";
-        adminNoAccess.style.display = "grid";
-        adminNoAccess.innerHTML = `
-          <img src="https://hackclub.com/404/dinobox.svg" alt="Dino guard" class="admin-no-access-dino" />
+        adminpanel.style.display = "none";
+        adminnoaccess.style.display = "grid";
+        adminnoaccess.innerHTML = `
+          <img src="https://hackclub.com/404/dinobox.svg" alt="Dino guard" class="adminnoaccessdino" />
           <h2>Nice try sherlock👀</h2>
-          <p>${message} <a href="${SOURCE_CODE_URL}" target="_blank" rel="noreferrer">here</a>.</p>
-          <div class="admin-no-access-actions">
-            <a class="button-link joined" href="./index.html">Back to Home</a>
-            <a class="button-link" href="${NO_ACCESS_URL}" target="_blank" rel="noreferrer">Mystery button</a>
+          <p>${message} <a href="${sourcecodeurl}" target="_blank" rel="noreferrer">here</a>.</p>
+          <div class="adminnoaccessactions">
+            <a class="buttonlink joined" href="./index.html">Back to Home</a>
+            <a class="buttonlink" href="${noaccessurl}" target="_blank" rel="noreferrer">Mystery button</a>
           </div>
         `;
       }
 
-      function getErrorCodeLabel(code) {
+      function geterrorcodelabel(code) {
         const labels = {
           rate_limited: "Slow down! You're making too many requests so you have been ratelimited",
           admin_only: "No VIP for you! This action is only for admins",
@@ -157,108 +157,108 @@
         return labels[code] || "Something odd happened";
       }
 
-      function formatApiError(data, fallback = "Request failed.") {
+      function formatapierror(data, fallback = "Request failed.") {
         const code = String(data?.code || data?.error || "").trim();
-        if (code) return getErrorCodeLabel(code);
+        if (code) return geterrorcodelabel(code);
         return String(data?.message || fallback);
       }
 
-      function setStatus(type, msg) {
-        statusBox.className = "status";
+      function setstatus(type, msg) {
+        statusbox.className = "status";
         if (!msg) {
-          statusBox.textContent = "";
+          statusbox.textContent = "";
           return;
         }
-        statusBox.classList.add(type);
-        statusBox.textContent = msg;
+        statusbox.classList.add(type);
+        statusbox.textContent = msg;
       }
 
-      function renderErrorCodes(byCode = {}) {
-        errorCodes.innerHTML = "";
-        const entries = Object.entries(byCode).sort((a, b) => b[1] - a[1]);
+      function rendererrorcodes(bycode = {}) {
+        errorcodes.innerHTML = "";
+        const entries = Object.entries(bycode).sort((a, b) => b[1] - a[1]);
 
         if (!entries.length) {
           const empty = document.createElement("p");
-          empty.className = "admin-empty";
+          empty.className = "adminempty";
           empty.textContent = "No errors yet.";
-          errorCodes.appendChild(empty);
+          errorcodes.appendChild(empty);
           return;
         }
 
         entries.forEach(([code, count]) => {
           const row = document.createElement("div");
-          row.className = "error-code-item";
+          row.className = "errorcodeitem";
 
           const chip = document.createElement("span");
-          chip.className = "code-chip";
+          chip.className = "codechip";
           chip.textContent = code;
 
           const value = document.createElement("strong");
           value.textContent = String(count);
 
           const meta = document.createElement("p");
-          meta.className = "audit-meta";
-          meta.textContent = getErrorCodeLabel(code);
+          meta.className = "auditmeta";
+          meta.textContent = geterrorcodelabel(code);
 
           row.append(chip, value, meta);
-          errorCodes.appendChild(row);
+          errorcodes.appendChild(row);
         });
       }
 
-      function renderAudit(events = []) {
-        allAuditEvents = events;
-        currentAuditPage = 1;
-        renderAuditPage();
+      function renderaudit(events = []) {
+        allauditevents = events;
+        currentauditpage = 1;
+        renderauditpage();
       }
 
-      function renderAuditPage() {
-        const pagination = document.getElementById("auditPagination");
-        auditList.innerHTML = "";
+      function renderauditpage() {
+        const pagination = document.getElementById("auditpagination");
+        auditlist.innerHTML = "";
 
-        const totalPages = Math.max(1, Math.ceil(allAuditEvents.length / auditPerPage));
-        currentAuditPage = Math.min(currentAuditPage, totalPages);
+        const totalpages = Math.max(1, Math.ceil(allauditevents.length / auditperpage));
+        currentauditpage = Math.min(currentauditpage, totalpages);
 
-        auditMeta.textContent = `${allAuditEvents.length} total event${allAuditEvents.length === 1 ? "" : "s"}`;
+        auditmeta.textContent = `${allauditevents.length} total event${allauditevents.length === 1 ? "" : "s"}`;
 
-        if (!allAuditEvents.length) {
+        if (!allauditevents.length) {
           const empty = document.createElement("p");
-          empty.className = "admin-empty";
+          empty.className = "adminempty";
           empty.textContent = "Nothing here yet, Its suspiciously quiet.";
-          auditList.appendChild(empty);
+          auditlist.appendChild(empty);
           pagination.innerHTML = "";
           return;
         }
 
-        const startIdx = (currentAuditPage - 1) * auditPerPage;
-        const endIdx = startIdx + auditPerPage;
-        const pageEvents = allAuditEvents.slice(startIdx, endIdx);
+        const startidx = (currentauditpage - 1) * auditperpage;
+        const endidx = startidx + auditperpage;
+        const pageevents = allauditevents.slice(startidx, endidx);
 
-        pageEvents.forEach((event, idx) => {
+        pageevents.forEach((event, idx) => {
           const item = document.createElement("div");
-          item.className = "audit-item";
+          item.className = "audititem";
 
-          const contentWrapper = document.createElement("div");
-          contentWrapper.style.flex = "1";
+          const contentwrapper = document.createElement("div");
+          contentwrapper.style.flex = "1";
 
           const head = document.createElement("div");
-          head.className = "audit-item-head";
+          head.className = "audititem-head";
 
           const type = document.createElement("span");
-          type.className = "audit-type";
+          type.className = "audittype";
           type.textContent = String(event.type || "event").replace(/_/g, " ");
 
           const outcome = document.createElement("span");
-          outcome.className = `audit-outcome ${event.outcome === "success" ? "success" : "failure"}`;
+          outcome.className = `auditoutcome ${event.outcome === "success" ? "success" : "failure"}`;
           outcome.textContent = event.outcome || "unknown";
 
           head.append(type, outcome);
 
           const meta = document.createElement("p");
-          meta.className = "audit-meta";
-          meta.textContent = formatDateTime(event.timestamp);
+          meta.className = "auditmeta";
+          meta.textContent = formatdatetime(event.timestamp);
 
           const details = document.createElement("p");
-          details.className = "audit-details";
+          details.className = "auditdetails";
           details.textContent = [
             event.code ? `code: ${event.code}` : "",
             event.channel ? `channel: ${event.channel}` : "",
@@ -270,212 +270,212 @@
             .filter(Boolean)
             .join(" | ");
 
-          contentWrapper.append(head, meta);
-          if (details.textContent) contentWrapper.appendChild(details);
+          contentwrapper.append(head, meta);
+          if (details.textContent) contentwrapper.appendChild(details);
 
-          const deleteBtn = document.createElement("button");
-          deleteBtn.className = "audit-item-delete";
-          deleteBtn.textContent = "Delete";
-          deleteBtn.addEventListener("click", async () => {
-            deleteBtn.disabled = true;
-            deleteBtn.textContent = "Deleting...";
+          const deletebtn = document.createElement("button");
+          deletebtn.className = "audititem-delete";
+          deletebtn.textContent = "Delete";
+          deletebtn.addEventListener("click", async () => {
+            deletebtn.disabled = true;
+            deletebtn.textContent = "Deleting...";
 
-            const deleted = await deleteAuditEvent(event.id);
+            const deleted = await deleteauditevent(event.id);
             if (!deleted) {
-              deleteBtn.disabled = false;
-              deleteBtn.textContent = "Delete";
+              deletebtn.disabled = false;
+              deletebtn.textContent = "Delete";
               return;
             }
 
-            const eventIndex = startIdx + idx;
-            allAuditEvents.splice(eventIndex, 1);
-            renderAuditPage();
+            const eventindex = startidx + idx;
+            allauditevents.splice(eventindex, 1);
+            renderauditpage();
           });
 
-          item.append(contentWrapper, deleteBtn);
-          auditList.appendChild(item);
+          item.append(contentwrapper, deletebtn);
+          auditlist.appendChild(item);
         });
 
         pagination.innerHTML = "";
-        if (totalPages > 1) {
-          const prevBtn = document.createElement("button");
-          prevBtn.textContent = "← Prev";
-          prevBtn.disabled = currentAuditPage === 1;
-          prevBtn.addEventListener("click", () => {
-            if (currentAuditPage > 1) {
-              currentAuditPage--;
-              renderAuditPage();
+        if (totalpages > 1) {
+          const prevbtn = document.createElement("button");
+          prevbtn.textContent = "← Prev";
+          prevbtn.disabled = currentauditpage === 1;
+          prevbtn.addEventListener("click", () => {
+            if (currentauditpage > 1) {
+              currentauditpage--;
+              renderauditpage();
             }
           });
-          pagination.appendChild(prevBtn);
+          pagination.appendChild(prevbtn);
 
-          for (let i = 1; i <= totalPages; i++) {
-            const pageBtn = document.createElement("button");
-            pageBtn.textContent = String(i);
-            pageBtn.className = i === currentAuditPage ? "active" : "";
-            pageBtn.addEventListener("click", () => {
-              currentAuditPage = i;
-              renderAuditPage();
+          for (let i = 1; i <= totalpages; i++) {
+            const pagebtn = document.createElement("button");
+            pagebtn.textContent = String(i);
+            pagebtn.className = i === currentauditpage ? "active" : "";
+            pagebtn.addEventListener("click", () => {
+              currentauditpage = i;
+              renderauditpage();
             });
-            pagination.appendChild(pageBtn);
+            pagination.appendChild(pagebtn);
           }
 
-          const nextBtn = document.createElement("button");
-          nextBtn.textContent = "Next →";
-          nextBtn.disabled = currentAuditPage === totalPages;
-          nextBtn.addEventListener("click", () => {
-            if (currentAuditPage < totalPages) {
-              currentAuditPage++;
-              renderAuditPage();
+          const nextbtn = document.createElement("button");
+          nextbtn.textContent = "Next →";
+          nextbtn.disabled = currentauditpage === totalpages;
+          nextbtn.addEventListener("click", () => {
+            if (currentauditpage < totalpages) {
+              currentauditpage++;
+              renderauditpage();
             }
           });
-          pagination.appendChild(nextBtn);
+          pagination.appendChild(nextbtn);
         }
       }
 
-      async function loadData() {
-        setStatus("", "");
-        refreshBtn.disabled = true;
+      async function loaddata() {
+        setstatus("", "");
+        refreshbtn.disabled = true;
 
         try {
-          const [metricsRes, auditRes] = await Promise.all([
-            apiGet("/api/admin/metrics"),
-            apiGet("/api/admin/audit?limit=100"),
+          const [metricsres, auditres] = await Promise.all([
+            apiget("/api/admin/metrics"),
+            apiget("/api/admin/audit?limit=100"),
           ]);
 
-          const metricsData = await readJson(metricsRes, { ok: false });
-          const auditData = await readJson(auditRes, { ok: false });
+          const metricsdata = await readjson(metricsres, { ok: false });
+          const auditdata = await readjson(auditres, { ok: false });
 
-          if (!metricsRes.ok || !metricsData.ok) {
-            throw new Error(metricsData.message || "Couldn't load metrics right now.");
+          if (!metricsres.ok || !metricsdata.ok) {
+            throw new Error(metricsdata.message || "Couldn't load metrics right now.");
           }
 
-          if (!auditRes.ok || !auditData.ok) {
-            throw new Error(auditData.message || "Couldn't load the audit log right now.");
+          if (!auditres.ok || !auditdata.ok) {
+            throw new Error(auditdata.message || "Couldn't load the audit log right now.");
           }
 
-          const m = metricsData.metrics || {};
-          authRate.textContent = formatPercent(m.auth?.successRate);
-          authMeta.textContent = `${m.auth?.success || 0} logins out of ${m.auth?.attempts || 0}`;
-          joinRate.textContent = formatPercent(m.join?.successRate);
-          joinMeta.textContent = `${m.join?.success || 0} successful joins out of ${m.join?.attempts || 0}`;
-          errorCount.textContent = String(m.errors?.total || 0);
+          const m = metricsdata.metrics || {};
+          authrate.textContent = formatpercent(m.auth?.successRate);
+          authmeta.textContent = `${m.auth?.success || 0} logins out of ${m.auth?.attempts || 0}`;
+          joinrate.textContent = formatpercent(m.join?.successRate);
+          joinmeta.textContent = `${m.join?.success || 0} successful joins out of ${m.join?.attempts || 0}`;
+          errorcount.textContent = String(m.errors?.total || 0);
 
-          const windowMin = Math.round(Number(m.join?.rateLimit?.windowMs || 0) / 60000);
-          const maxReq = Number(m.join?.rateLimit?.maxRequests || 0);
-          const rsvpWindowMin = Math.round(Number(m.rsvp?.rateLimit?.windowMs || 0) / 60000);
-          const rsvpMaxReq = Number(m.rsvp?.rateLimit?.maxRequests || 0);
-          rateLimitMeta.textContent = maxReq
-            ? `${maxReq} join requests per IP every ${windowMin} min`
+          const windowmin = Math.round(Number(m.join?.rateLimit?.windowMs || 0) / 60000);
+          const maxreq = Number(m.join?.rateLimit?.maxRequests || 0);
+          const rsvpwindowmin = Math.round(Number(m.rsvp?.rateLimit?.windowMs || 0) / 60000);
+          const rsvpmaxreq = Number(m.rsvp?.rateLimit?.maxRequests || 0);
+          ratelimitmeta.textContent = maxreq
+            ? `${maxreq} join requests per IP every ${windowmin} min`
             : "Join rate limit disabled";
-          rsvpRateLimitMeta.textContent = rsvpMaxReq
-            ? `${rsvpMaxReq} RSVP updates per IP every ${rsvpWindowMin} min`
+          rsvpratelimitmeta.textContent = rsvpmaxreq
+            ? `${rsvpmaxreq} RSVP updates per IP every ${rsvpwindowmin} min`
             : "RSVP rate limit disabled";
-          retentionNote.textContent = `Audit logs are retained for ${auditData.retentionDays || m.audit?.retentionDays || 14} days.`;
+          retentionnote.textContent = `Audit logs are retained for ${auditdata.retentionDays || m.audit?.retentionDays || 14} days.`;
 
-          renderErrorCodes(m.errors?.byCode || {});
-          renderAudit(auditData.events || []);
+          rendererrorcodes(m.errors?.byCode || {});
+          renderaudit(auditdata.events || []);
         } catch (err) {
-          setStatus("error", err.message || "Dashboard had a tiny wobble. Try again.");
+          setstatus("error", err.message || "Dashboard had a tiny wobble. Try again.");
         } finally {
-          refreshBtn.disabled = false;
+          refreshbtn.disabled = false;
         }
       }
 
-      async function clearAuditLog() {
-        const confirm = await showConfirm({
+      async function clearauditlog() {
+        const confirm = await showconfirm({
           title: "Clear audit log?",
           text: "This deletes all current entries.",
-          confirmButtonText: "Yes, clear it",
-          cancelButtonText: "Cancel",
+          confirmbuttontext: "Yes, clear it",
+          cancelbuttontext: "Cancel",
         });
         if (!confirm?.isConfirmed) return;
 
-        const clearBtn = document.getElementById("clearAuditBtn");
-        clearBtn.disabled = true;
-        setStatus("", "");
+        const clearbtn = document.getElementById("clearauditbtn");
+        clearbtn.disabled = true;
+        setstatus("", "");
 
         try {
-          const response = await apiFetch("/api/admin/audit", {
+          const response = await apifetch("/api/admin/audit", {
             method: "DELETE",
           });
-          const data = await readJson(response, { ok: false });
+          const data = await readjson(response, { ok: false });
 
           if (!response.ok || !data.ok) {
-            throw new Error(formatApiError(data, "Couldn't clear the audit log."));
+            throw new Error(formatapierror(data, "Couldn't clear the audit log."));
           }
 
-          setStatus("success", `Cleared ${data.clearedCount || 0} audit event${data.clearedCount === 1 ? "" : "s"}.`);
-          await loadData();
+          setstatus("success", `Cleared ${data.clearedCount || 0} audit event${data.clearedCount === 1 ? "" : "s"}.`);
+          await loaddata();
         } catch (err) {
-          setStatus("error", err.message || "Couldn't clear the audit log right now.");
+          setstatus("error", err.message || "Couldn't clear the audit log right now.");
         } finally {
-          clearBtn.disabled = false;
+          clearbtn.disabled = false;
         }
       }
 
-      async function deleteAuditEvent(eventId) {
-        if (!eventId) return false;
+      async function deleteauditevent(eventid) {
+        if (!eventid) return false;
 
-        setStatus("", "");
+        setstatus("", "");
 
         try {
-          const response = await apiFetch(`/api/admin/audit?id=${encodeURIComponent(eventId)}`, {
+          const response = await apifetch(`/api/admin/audit?id=${encodeURIComponent(eventid)}`, {
             method: "DELETE",
           });
-          const data = await readJson(response, { ok: false });
+          const data = await readjson(response, { ok: false });
 
           if (!response.ok || !data.ok) {
-            throw new Error(formatApiError(data, "Couldn't delete that audit event."));
+            throw new Error(formatapierror(data, "Couldn't delete that audit event."));
           }
 
-          setStatus("success", "Deleted audit event.");
+          setstatus("success", "Deleted audit event.");
           return true;
         } catch (err) {
-          setStatus("error", err.message || "Couldn't delete that audit event right now.");
+          setstatus("error", err.message || "Couldn't delete that audit event right now.");
           return false;
         }
       }
 
-      async function clearErrorsByCode() {
-        const confirm = await showConfirm({
+      async function clearerrorsbycode() {
+        const confirm = await showconfirm({
           title: "Clear all errors?",
           text: "This will reset the error code statistics.",
-          confirmButtonText: "Yes, clear them",
-          cancelButtonText: "Cancel",
+          confirmbuttontext: "Yes, clear them",
+          cancelbuttontext: "Cancel",
         });
         if (!confirm?.isConfirmed) return;
 
-        const clearErrorsBtn = document.getElementById("clearErrorsBtn");
-        clearErrorsBtn.disabled = true;
-        setStatus("", "");
+        const clearerrorsbtn = document.getElementById("clearerrorsbtn");
+        clearerrorsbtn.disabled = true;
+        setstatus("", "");
 
         try {
-          const response = await apiFetch("/api/admin/errors", {
+          const response = await apifetch("/api/admin/errors", {
             method: "DELETE",
           });
-          const data = await readJson(response, { ok: false });
+          const data = await readjson(response, { ok: false });
 
           if (!response.ok || !data.ok) {
-            throw new Error(formatApiError(data, "Couldn't clear errors."));
+            throw new Error(formatapierror(data, "Couldn't clear errors."));
           }
 
-          setStatus("success", "Cleared all error statistics.");
-          await loadData();
+          setstatus("success", "Cleared all error statistics.");
+          await loaddata();
         } catch (err) {
-          setStatus("error", err.message || "Couldn't clear errors right now.");
+          setstatus("error", err.message || "Couldn't clear errors right now.");
         } finally {
-          clearErrorsBtn.disabled = false;
+          clearerrorsbtn.disabled = false;
         }
       }
 
-      async function viewAs() {
-        const input = document.getElementById("viewAsSlackIdInput");
-        const btn = document.getElementById("viewAsBtn");
-        const slackId = input.value.trim().toUpperCase();
+      async function viewas() {
+        const input = document.getElementById("viewasslackidinput");
+        const btn = document.getElementById("viewasbtn");
+        const slackid = input.value.trim().toUpperCase();
 
-        if (!slackId) {
-          await showPopup({
+        if (!slackid) {
+          await showpopup({
             icon: "warning",
             title: "Slack ID needed",
             text: "Enter a Slack ID first.",
@@ -484,44 +484,44 @@
         }
 
         btn.disabled = true;
-        viewAsModal.style.display = "flex";
-        viewAsModalContent.innerHTML = `<p style="color:var(--hc-muted); text-align:center;">Loading…</p>`;
-        viewAsModalStatus.textContent = "";
+        viewasmodal.style.display = "flex";
+        viewasmodalcontent.innerHTML = `<p style="color:var(--hcmuted); text-align:center;">Loading…</p>`;
+        viewasmodalstatus.textContent = "";
 
         try {
-          const response = await apiGet(`/api/admin/view-as?slackId=${encodeURIComponent(slackId)}`);
-          const data = await readJson(response, { ok: false });
+          const response = await apiget(`/api/admin/view-as?slackId=${encodeURIComponent(slackid)}`);
+          const data = await readjson(response, { ok: false });
 
           if (!data.ok) {
-            viewAsModalContent.innerHTML = `<p class="result-err">Failed: ${formatApiError(data, "Request failed.")}</p>`;
+            viewasmodalcontent.innerHTML = `<p class="resulterr">Failed: ${formatapierror(data, "Request failed.")}</p>`;
             return;
           }
 
-          if (!yswsCatalog.length) {
-            await loadYswsCatalog();
+          if (!yswscatalog.length) {
+            await loadyswscatalog();
           }
-          viewAsState = {
+          viewasstate = {
             ...data,
             membership: { ...(data.membership || {}) },
-            rsvpDone: { ...(data.rsvpDone || {}) },
+            rsvpdone: { ...(data.rsvpDone || {}) },
           };
-          renderViewAsDashboard();
+          renderviewasdashboard();
         } catch (_err) {
-          viewAsModalContent.innerHTML = `<p class="result-err">Request failed.</p>`;
+          viewasmodalcontent.innerHTML = `<p class="resulterr">Request failed.</p>`;
         } finally {
           btn.disabled = false;
         }
       }
 
-      function renderViewAsDashboard(actionMessage = "") {
-        if (!viewAsState) {
-          viewAsModalContent.innerHTML = `<p class="result-err">No user selected.</p>`;
+      function renderviewasdashboard(actionmessage = "") {
+        if (!viewasstate) {
+          viewasmodalcontent.innerHTML = `<p class="resulterr">No user selected.</p>`;
           return;
         }
 
-        const data = viewAsState;
-        const rows = (yswsCatalog.length
-          ? yswsCatalog
+        const data = viewasstate;
+        const rows = (yswscatalog.length
+          ? yswscatalog
           : Object.keys(data.membership || {}).map((channel) => ({
               name: channel,
               channel,
@@ -530,49 +530,49 @@
           .map((item) => ({
             ...item,
             joined: !!data.membership?.[item.channel],
-            rsvpDone: !!data.rsvpDone?.[item.channel],
+            rsvpdone: !!data.rsvpDone?.[item.channel],
           }))
           .sort((a, b) => Number(a.joined) - Number(b.joined) || a.name.localeCompare(b.name));
 
-        const joinedCount = rows.filter((item) => item.joined).length;
-        const completedCount = rows.filter((item) => item.joined && item.rsvpDone).length;
-        const totalCount = rows.length;
-        const remainingCount = Math.max(0, totalCount - completedCount);
-        const completionPercent = totalCount ? Math.round((completedCount / totalCount) * 100) : 0;
-        const verificationLabel = data.verificationLabel || "Unknown";
-        const verificationStatus = data.verificationStatus || "Unavailable";
-        const eligibilityLabel =
+        const joinedcount = rows.filter((item) => item.joined).length;
+        const completedcount = rows.filter((item) => item.joined && item.rsvpdone).length;
+        const totalcount = rows.length;
+        const remainingcount = Math.max(0, totalcount - completedcount);
+        const completionpercent = totalcount ? Math.round((completedcount / totalcount) * 100) : 0;
+        const verificationlabel = data.verificationLabel || "Unknown";
+        const verificationstatus = data.verificationStatus || "Unavailable";
+        const eligibilitylabel =
           data.yswsEligible === true
             ? "Eligible"
             : data.yswsEligible === false
               ? "Not eligible"
               : "Unknown";
 
-        const cardsHtml = rows.length
+        const cardshtml = rows.length
           ? rows
               .map(
                 (item) => `
-                  <div class="card view-as-card${item.joined && item.rsvpDone ? " card-complete" : item.joined || item.rsvpDone ? " card-partial" : ""}">
-                    <div class="card-head">
-                      <div class="card-title-group">
+                  <div class="card viewascard${item.joined && item.rsvpdone ? " cardcomplete" : item.joined || item.rsvpdone ? " cardpartial" : ""}">
+                    <div class="cardhead">
+                      <div class="cardtitlegroup">
                         <h3>${item.name}</h3>
-                        <span class="channel-id">${item.channel}</span>
+                        <span class="channelid">${item.channel}</span>
                       </div>
                       <button
                         type="button"
-                        class="rsvp-toggle view-as-rsvp-btn ${item.rsvpDone ? "is-checked" : ""}"
+                        class="rsvptoggle viewasrsvpbtn ${item.rsvpdone ? "ischecked" : ""}"
                         data-channel="${item.channel}"
                         data-name="${item.name}"
-                        data-done="${item.rsvpDone ? "false" : "true"}"
-                        aria-label="${item.rsvpDone ? `Unmark RSVP done for ${item.name}` : `Mark RSVP done for ${item.name}` }"
-                        title="${item.rsvpDone ? "Undo RSVP done" : "Mark RSVP done"}"
+                        data-done="${item.rsvpdone ? "false" : "true"}"
+                        aria-label="${item.rsvpdone ? `Unmark RSVP done for ${item.name}` : `Mark RSVP done for ${item.name}` }"
+                        title="${item.rsvpdone ? "Undo RSVP done" : "Mark RSVP done"}"
                       ></button>
                     </div>
                     <div class="actions">
                       ${
                         item.joined
                           ? '<button class="joined" disabled>Joined</button>'
-                          : `<button class="view-as-join-btn" data-channel="${item.channel}" data-name="${item.name}">Add user to channel</button>`
+                          : `<button class="viewasjoinbtn" data-channel="${item.channel}" data-name="${item.name}">Add user to channel</button>`
                       }
                       <button ${item.form ? `onclick="window.open('${item.form}', '_blank')"` : "disabled"}>Fill RSVP</button>
                       <button class="joined" disabled>Description</button>
@@ -581,173 +581,173 @@
                 `,
               )
               .join("")
-          : '<div class="card view-as-card"><h3>No programs found</h3><p class="muted">Could not load channel catalog.</p></div>';
+          : '<div class="card viewascard"><h3>No programs found</h3><p class="muted">Could not load channel catalog.</p></div>';
 
-        viewAsModalContent.innerHTML = `
-          <div class="view-as-shell">
-            <div class="view-as-head">
+        viewasmodalcontent.innerHTML = `
+          <div class="viewasshell">
+            <div class="viewashead">
               <div class="user">
                 <img class="avatar" src="${data.avatar || "https://user-cdn.hackclub-assets.com/019cf11f-eade-7304-ab15-71833ccc4c32/icon-rounded.svg"}" alt="avatar" />
-                <div class="user-meta">
+                <div class="usermeta">
                   <h3>Viewing as ${data.name || data.username || data.slackId || "user"}</h3>
-                  <div class="slack-id-row">
-                    <span class="slack-id-text">Slack ID: <strong>${data.slackId || "—"}</strong></span>
-                    <span class="slack-id-text">Username: <strong>${data.username ? `@${data.username}` : "—"}</strong></span>
-                    <span class="slack-id-text">Email: <strong>${data.email || "—"}</strong></span>
+                  <div class="slackidrow">
+                    <span class="slackidtext">Slack ID: <strong>${data.slackId || "—"}</strong></span>
+                    <span class="slackidtext">Username: <strong>${data.username ? `@${data.username}` : "—"}</strong></span>
+                    <span class="slackidtext">Email: <strong>${data.email || "—"}</strong></span>
                   </div>
-                  <div class="verification-row">
-                    <span class="verification-pill ${data.isVerified === true ? "verified" : data.isVerified === false ? "not-verified" : "unknown"}">Verification: ${verificationLabel}</span>
-                    <span class="verification-detail">Status: ${verificationStatus}</span>
-                    <span class="verification-detail">YSWS eligibility: ${eligibilityLabel}</span>
+                  <div class="verificationrow">
+                    <span class="verificationpill ${data.isVerified === true ? "verified" : data.isVerified === false ? "notverified" : "unknown"}">Verification: ${verificationlabel}</span>
+                    <span class="verificationdetail">Status: ${verificationstatus}</span>
+                    <span class="verificationdetail">YSWS eligibility: ${eligibilitylabel}</span>
                   </div>
                 </div>
               </div>
             </div>
-            <div class="stats-grid view-as-stats">
+            <div class="statsgrid viewasstats">
               <div class="stat">
-                <p class="stat-label">Joined channels</p>
-                <p class="stat-value">${joinedCount}</p>
+                <p class="statlabel">Joined channels</p>
+                <p class="statvalue">${joinedcount}</p>
               </div>
               <div class="stat">
-                <p class="stat-label">Remaining</p>
-                <p class="stat-value">${remainingCount}</p>
+                <p class="statlabel">Remaining</p>
+                <p class="statvalue">${remainingcount}</p>
               </div>
               <div class="stat">
-                <p class="stat-label">Total YSWSes</p>
-                <p class="stat-value">${totalCount}</p>
+                <p class="statlabel">Total YSWSes</p>
+                <p class="statvalue">${totalcount}</p>
               </div>
             </div>
-            <div class="progress-wrap" style="margin-top: 10px">
-              <p class="stat-label" style="margin: 0">Completion</p>
-              <p class="progress-meta">${completedCount} of ${totalCount} fully complete (${completionPercent}%)</p>
-              <div class="progress-bar">
-                <div class="progress-fill" style="width:${completionPercent}%"></div>
+            <div class="progresswrap" style="margin-top: 10px">
+              <p class="statlabel" style="margin: 0">Completion</p>
+              <p class="progressmeta">${completedcount} of ${totalcount} fully complete (${completionpercent}%)</p>
+              <div class="progressbar">
+                <div class="progressfill" style="width:${completionpercent}%"></div>
               </div>
             </div>
-            <div class="grid view-as-grid">${cardsHtml}</div>
+            <div class="grid viewasgrid">${cardshtml}</div>
           </div>
         `;
 
-        if (actionMessage) {
-          viewAsModalStatus.textContent = actionMessage;
-          viewAsModalStatus.className = /Added|Marked|Removed|already in/i.test(actionMessage)
+        if (actionmessage) {
+          viewasmodalstatus.textContent = actionmessage;
+          viewasmodalstatus.className = /Added|Marked|Removed|already in/i.test(actionmessage)
             ? "status success"
             : "status";
         }
 
-        viewAsModalContent.querySelectorAll(".view-as-join-btn").forEach((button) => {
+        viewasmodalcontent.querySelectorAll(".viewasjoinbtn").forEach((button) => {
           button.addEventListener("click", () => {
             const channel = button.getAttribute("data-channel");
-            const channelName = button.getAttribute("data-name");
-            showPermissionPrompt({
-              question: `Did this user (${data.slackId}) give you permission to add them to ${channelName}?`,
-              loadingText: "Joining...",
-              selector: `.view-as-join-btn[data-channel="${channel}"]`,
-              onConfirm: async () => {
-                const response = await apiFetch("/api/admin/test-join", {
+            const channelname = button.getAttribute("data-name");
+            showpermissionprompt({
+              question: `Did this user (${data.slackId}) give you permission to add them to ${channelname}?`,
+              loadingtext: "Joining...",
+              selector: `.viewasjoinbtn[data-channel="${channel}"]`,
+              onconfirm: async () => {
+                const response = await apifetch("/api/admin/test-join", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ slackId: data.slackId, channel }),
                 });
-                const joinData = await readJson(response, { ok: false });
+                const joindata = await readjson(response, { ok: false });
 
-                if (!joinData.ok) {
-                  return `Could not add ${data.slackId} to ${channelName}: ${formatApiError(joinData, "failed")}`;
+                if (!joindata.ok) {
+                  return `Could not add ${data.slackId} to ${channelname}: ${formatapierror(joindata, "failed")}`;
                 }
 
-                viewAsState.membership[channel] = true;
-                return joinData.result === "already_in_channel"
-                  ? `${data.slackId} is already in ${channelName}.`
-                  : `Added ${data.slackId} to ${channelName}. ✓`;
+                viewasstate.membership[channel] = true;
+                return joindata.result === "already_in_channel"
+                  ? `${data.slackId} is already in ${channelname}.`
+                  : `Added ${data.slackId} to ${channelname}. ✓`;
               },
             });
           });
         });
 
-        viewAsModalContent.querySelectorAll(".view-as-rsvp-btn").forEach((button) => {
+        viewasmodalcontent.querySelectorAll(".viewasrsvpbtn").forEach((button) => {
           button.addEventListener("click", () => {
             const channel = button.getAttribute("data-channel");
-            const channelName = button.getAttribute("data-name");
+            const channelname = button.getAttribute("data-name");
             const done = button.getAttribute("data-done") === "true";
-            showPermissionPrompt({
+            showpermissionprompt({
               question: done
-                ? `Did this user (${data.slackId}) ask you to mark the ${channelName} RSVP as done?`
-                : `Did this user (${data.slackId}) ask you to undo the ${channelName} RSVP done mark?`,
-              loadingText: done ? "Saving..." : "Undoing...",
-              selector: `.view-as-rsvp-btn[data-channel="${channel}"]`,
-              onConfirm: async () => {
-                const response = await apiFetch("/api/admin/test-rsvp", {
+                ? `Did this user (${data.slackId}) ask you to mark the ${channelname} RSVP as done?`
+                : `Did this user (${data.slackId}) ask you to undo the ${channelname} RSVP done mark?`,
+              loadingtext: done ? "Saving..." : "Undoing...",
+              selector: `.viewasrsvpbtn[data-channel="${channel}"]`,
+              onconfirm: async () => {
+                const response = await apifetch("/api/admin/test-rsvp", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ slackId: data.slackId, channel, done }),
                 });
-                const rsvpData = await readJson(response, { ok: false });
+                const rsvpdata = await readjson(response, { ok: false });
 
-                if (!rsvpData.ok) {
-                  return `Could not ${done ? "mark" : "undo"} ${channelName}: ${formatApiError(rsvpData, "failed")}`;
+                if (!rsvpdata.ok) {
+                  return `Could not ${done ? "mark" : "undo"} ${channelname}: ${formatapierror(rsvpdata, "failed")}`;
                 }
 
-                viewAsState.rsvpDone = { ...(viewAsState.rsvpDone || {}), ...(rsvpData.rsvpDone || {}), [channel]: done };
+                viewasstate.rsvpdone = { ...(viewasstate.rsvpdone || {}), ...(rsvpdata.rsvpDone || {}), [channel]: done };
                 return done
-                  ? `Marked ${channelName} RSVP as done for ${data.slackId}.`
-                  : `Removed the RSVP done mark for ${channelName}.`;
+                  ? `Marked ${channelname} RSVP as done for ${data.slackId}.`
+                  : `Removed the RSVP done mark for ${channelname}.`;
               },
             });
           });
         });
       }
 
-      function showPermissionPrompt({ question, selector, loadingText, onConfirm }) {
+      function showpermissionprompt({ question, selector, loadingtext, onconfirm }) {
         (async () => {
-          const result = await showConfirm({
+          const result = await showconfirm({
             title: "Permission check",
             text: question,
-            confirmButtonText: "Yes, proceed",
-            cancelButtonText: "No, cancel",
+            confirmbuttontext: "Yes, proceed",
+            cancelbuttontext: "No, cancel",
           });
           if (!result?.isConfirmed) return;
 
-          const button = selector ? viewAsModalContent.querySelector(selector) : null;
+          const button = selector ? viewasmodalcontent.querySelector(selector) : null;
           if (button) {
             button.disabled = true;
-            if (button.classList.contains("rsvp-toggle")) {
-              button.classList.add("is-loading");
+            if (button.classList.contains("rsvptoggle")) {
+              button.classList.add("isloading");
             } else {
-              button.textContent = loadingText || "Working...";
+              button.textContent = loadingtext || "Working...";
             }
           }
 
           let message = "";
           try {
-            message = await onConfirm();
+            message = await onconfirm();
           } catch (_err) {
             message = "Request failed while updating that user.";
           }
 
-          renderViewAsDashboard(message);
+          renderviewasdashboard(message);
         })();
       }
 
-      async function lookupUser() {
-        const input = document.getElementById("lookupSlackIdInput");
-        const resultBox = document.getElementById("lookupResult");
-        const btn = document.getElementById("lookupBtn");
-        const slackId = input.value.trim().toUpperCase();
+      async function lookupuser() {
+        const input = document.getElementById("lookupslackidinput");
+        const resultbox = document.getElementById("lookupresult");
+        const btn = document.getElementById("lookupbtn");
+        const slackid = input.value.trim().toUpperCase();
 
-        if (!slackId) {
-          resultBox.innerHTML = `<span class="result-err">Enter a Slack ID first.</span>`;
+        if (!slackid) {
+          resultbox.innerHTML = `<span class="resulterr">Enter a Slack ID first.</span>`;
           return;
         }
 
         btn.disabled = true;
-        resultBox.innerHTML = `<span style="color:var(--hc-muted)">Loading…</span>`;
+        resultbox.innerHTML = `<span style="color:var(--hcmuted)">Loading…</span>`;
 
         try {
-          const response = await apiGet(`/api/admin/lookup?slackId=${encodeURIComponent(slackId)}`);
-          const data = await readJson(response, { ok: false });
+          const response = await apiget(`/api/admin/lookup?slackId=${encodeURIComponent(slackid)}`);
+          const data = await readjson(response, { ok: false });
 
           if (!data.ok) {
-            resultBox.innerHTML = `<span class="result-err">${formatApiError(data, "Lookup failed.")}</span>`;
+            resultbox.innerHTML = `<span class="resulterr">${formatapierror(data, "Lookup failed.")}</span>`;
             return;
           }
 
@@ -757,36 +757,36 @@
             ["Slack ID", data.slackId || "—"],
           ];
 
-          const rowsHtml = rows
+          const rowshtml = rows
             .map(([label, value]) =>
-              `<div class="result-row"><span class="result-label">${label}</span><span class="result-value">${value}</span></div>`,
+              `<div class="resultrow"><span class="resultlabel">${label}</span><span class="resultvalue">${value}</span></div>`,
             )
             .join("");
 
           const chips = Object.entries(data.membership || {})
             .map(
-              ([channel, inChannel]) =>
-                `<span class="membership-chip ${inChannel ? "in" : "out"}">${inChannel ? "✓" : "○"} ${channel}</span>`,
+              ([channel, inchannel]) =>
+                `<span class="membershipchip ${inchannel ? "in" : "out"}">${inchannel ? "✓" : "○"} ${channel}</span>`,
             )
             .join("");
 
-          resultBox.innerHTML = rowsHtml + (chips ? `<div class="membership-grid">${chips}</div>` : "");
+          resultbox.innerHTML = rowshtml + (chips ? `<div class="membershipgrid">${chips}</div>` : "");
         } catch (_err) {
-          resultBox.innerHTML = `<span class="result-err">Request failed.</span>`;
+          resultbox.innerHTML = `<span class="resulterr">Request failed.</span>`;
         } finally {
           btn.disabled = false;
         }
       }
 
-      async function loadYswsCatalog() {
-        const response = await apiGet("/ysws.json").catch(() => null);
+      async function loadyswscatalog() {
+        const response = await apiget("/ysws.json").catch(() => null);
         if (!response || !response.ok) {
-          yswsCatalog = [];
+          yswscatalog = [];
           return;
         }
 
         const list = await response.json().catch(() => []);
-        yswsCatalog = list
+        yswscatalog = list
           .filter((item) => item?.name && item?.channel)
           .map((item) => ({
             name: String(item.name),
@@ -795,14 +795,14 @@
           }));
       }
 
-      async function populateChannelSelect() {
-        const select = document.getElementById("testJoinChannelSelect");
+      async function populatechannelselect() {
+        const select = document.getElementById("testjoinchannelselect");
         select.innerHTML = "";
-        if (!yswsCatalog.length) {
-          await loadYswsCatalog();
+        if (!yswscatalog.length) {
+          await loadyswscatalog();
         }
 
-        yswsCatalog
+        yswscatalog
           .sort((a, b) => a.name.localeCompare(b.name))
           .forEach((item) => {
           if (!item.channel) return;
@@ -813,113 +813,113 @@
           });
       }
 
-      function selectAllChannels() {
-        const select = document.getElementById("testJoinChannelSelect");
+      function selectallchannels() {
+        const select = document.getElementById("testjoinchannelselect");
         for (const option of select.options) option.selected = true;
       }
 
-      function clearSelectedChannels() {
-        const select = document.getElementById("testJoinChannelSelect");
+      function clearselectedchannels() {
+        const select = document.getElementById("testjoinchannelselect");
         for (const option of select.options) option.selected = false;
       }
 
-      async function testJoin() {
-        const slackIdInput = document.getElementById("testJoinSlackIdInput");
-        const channelSelect = document.getElementById("testJoinChannelSelect");
-        const resultBox = document.getElementById("testJoinResult");
-        const btn = document.getElementById("testJoinBtn");
-        const slackId = slackIdInput.value.trim().toUpperCase();
-        const channels = Array.from(channelSelect.selectedOptions).map((o) => o.value);
+      async function testjoin() {
+        const slackidinput = document.getElementById("testjoinslackidinput");
+        const channelselect = document.getElementById("testjoinchannelselect");
+        const resultbox = document.getElementById("testjoinresult");
+        const btn = document.getElementById("testjoinbtn");
+        const slackid = slackidinput.value.trim().toUpperCase();
+        const channels = Array.from(channelselect.selectedOptions).map((o) => o.value);
 
-        if (!slackId) {
-          resultBox.innerHTML = `<span class="result-err">Enter a Slack ID.</span>`;
+        if (!slackid) {
+          resultbox.innerHTML = `<span class="resulterr">Enter a Slack ID.</span>`;
           return;
         }
         if (!channels.length) {
-          resultBox.innerHTML = `<span class="result-err">Select at least one channel.</span>`;
+          resultbox.innerHTML = `<span class="resulterr">Select at least one channel.</span>`;
           return;
         }
 
         btn.disabled = true;
-        resultBox.innerHTML = `<span style="color:var(--hc-muted)">Working…</span>`;
+        resultbox.innerHTML = `<span style="color:var(--hcmuted)">Working…</span>`;
 
         const results = [];
         for (const channel of channels) {
           try {
-            const response = await apiFetch("/api/admin/test-join", {
+            const response = await apifetch("/api/admin/test-join", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ slackId, channel }),
+              body: JSON.stringify({ slackId: slackid, channel }),
             });
-            const data = await readJson(response, { ok: false });
+            const data = await readjson(response, { ok: false });
             results.push({
               channel,
               ok: data.ok,
               result: data.result,
-              message: data.ok ? data.message : formatApiError(data, "Failed"),
+              message: data.ok ? data.message : formatapierror(data, "Failed"),
             });
           } catch (_err) {
             results.push({ channel, ok: false, message: "Request failed." });
           }
         }
 
-        resultBox.innerHTML = results
+        resultbox.innerHTML = results
           .map((r) =>
             r.ok
-              ? `<div class="result-row"><span class="result-label">${r.channel}</span><span class="result-ok">✓ ${r.result === "already_in_channel" ? "Already in" : "Added"}</span></div>`
-              : `<div class="result-row"><span class="result-label">${r.channel}</span><span class="result-err">✗ ${r.message || "Failed"}</span></div>`,
+              ? `<div class="resultrow"><span class="resultlabel">${r.channel}</span><span class="resultok">✓ ${r.result === "already_in_channel" ? "Already in" : "Added"}</span></div>`
+              : `<div class="resultrow"><span class="resultlabel">${r.channel}</span><span class="resulterr">✗ ${r.message || "Failed"}</span></div>`,
           )
           .join("");
 
-        const successCount = results.filter((r) => r.ok).length;
-        const totalCount = results.length;
-        resultBox.innerHTML = `<div class="result-row"><span class="result-label">Summary</span><span class="result-value">${successCount}/${totalCount} channel updates succeeded</span></div>` + resultBox.innerHTML;
+        const successcount = results.filter((r) => r.ok).length;
+        const totalcount = results.length;
+        resultbox.innerHTML = `<div class="resultrow"><span class="resultlabel">Summary</span><span class="resultvalue">${successcount}/${totalcount} channel updates succeeded</span></div>` + resultbox.innerHTML;
 
-        await loadData();
+        await loaddata();
         btn.disabled = false;
       }
 
       async function boot() {
-        const accessRes = await apiGet("/api/admin/access").catch(() => null);
-        if (!accessRes || !accessRes.ok) {
-          renderNoAccess("not_authenticated");
+        const accessres = await apiget("/api/admin/access").catch(() => null);
+        if (!accessres || !accessres.ok) {
+          rendernoaccess("not_authenticated");
           return;
         }
-        const data = await readJson(accessRes, { ok: false });
+        const data = await readjson(accessres, { ok: false });
         if (!data.ok) {
-          renderNoAccess(data.code || "admin_only");
+          rendernoaccess(data.code || "admin_only");
           return;
         }
 
-        adminPanel.style.display = "grid";
-        adminNoAccess.style.display = "none";
+        adminpanel.style.display = "grid";
+        adminnoaccess.style.display = "none";
 
-        refreshBtn.addEventListener("click", loadData);
-        document.getElementById("clearAuditBtn").addEventListener("click", clearAuditLog);
-        document.getElementById("clearErrorsBtn").addEventListener("click", clearErrorsByCode);
+        refreshbtn.addEventListener("click", loaddata);
+        document.getElementById("clearauditbtn").addEventListener("click", clearauditlog);
+        document.getElementById("clearerrorsbtn").addEventListener("click", clearerrorsbycode);
 
-        document.getElementById("closeViewAsBtn").addEventListener("click", () => {
-          viewAsModal.style.display = "none";
-          viewAsModalStatus.textContent = "";
+        document.getElementById("closeviewasbtn").addEventListener("click", () => {
+          viewasmodal.style.display = "none";
+          viewasmodalstatus.textContent = "";
         });
 
-        document.getElementById("viewAsBtn").addEventListener("click", viewAs);
-        document.getElementById("viewAsSlackIdInput").addEventListener("keydown", (e) => {
-          if (e.key === "Enter") viewAs();
+        document.getElementById("viewasbtn").addEventListener("click", viewas);
+        document.getElementById("viewasslackidinput").addEventListener("keydown", (e) => {
+          if (e.key === "Enter") viewas();
         });
 
-        document.getElementById("lookupBtn").addEventListener("click", lookupUser);
-        document.getElementById("lookupSlackIdInput").addEventListener("keydown", (e) => {
-          if (e.key === "Enter") lookupUser();
+        document.getElementById("lookupbtn").addEventListener("click", lookupuser);
+        document.getElementById("lookupslackidinput").addEventListener("keydown", (e) => {
+          if (e.key === "Enter") lookupuser();
         });
 
-        document.getElementById("testJoinBtn").addEventListener("click", testJoin);
-        document.getElementById("selectAllChannelsBtn").addEventListener("click", selectAllChannels);
-        document.getElementById("clearChannelsBtn").addEventListener("click", clearSelectedChannels);
+        document.getElementById("testjoinbtn").addEventListener("click", testjoin);
+        document.getElementById("selectallchannelsbtn").addEventListener("click", selectallchannels);
+        document.getElementById("clearchannelsbtn").addEventListener("click", clearselectedchannels);
 
-        await loadYswsCatalog();
-        await populateChannelSelect();
-        await loadData();
+        await loadyswscatalog();
+        await populatechannelselect();
+        await loaddata();
       }
 
       boot();

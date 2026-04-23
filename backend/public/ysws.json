@@ -152,5 +152,12 @@
     "channel": "C0ALJT4J7V0",
     "description": "YOU SHIP: A project that is usable only with a keyboard. NO TAB KEY. NO MOUSE.\nWE SHIP: Keyboard grants and prebuilt keyboards.:",
     "website": "https://tabbed.dino.icu/"
+  },
+  {
+    "name": "Shipyard",
+    "form": "https://shipyard.fillout.com/rsvp",
+    "channel": "C0A7AJRN97X",
+    "description": "Ship 7 weeks of coding & computing challenges. Earn Prizes.",
+    "website": "https://shipyard.hackclub.com/"
   }
 ]

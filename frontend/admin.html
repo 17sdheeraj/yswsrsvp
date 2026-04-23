@@ -13,140 +13,140 @@
   </head>
   <body>
     <div class="container">
-      <div class="admin-nav">
-        <a href="./index.html" class="back-link">← Back to RSVP</a>
+      <div class="adminnav">
+        <a href="./index.html" class="backlink">← Back to RSVP</a>
       </div>
 
-      <div id="adminNoAccess" class="admin-no-access" style="display: none"></div>
+      <div id="adminnoaccess" class="adminnoaccess" style="display: none"></div>
 
-      <div id="viewAsModal" class="view-as-modal" style="display: none">
-        <div class="view-as-modal-header">
-          <button id="closeViewAsBtn" class="button-link">← Back</button>
-          <div id="viewAsModalStatus" class="status" aria-live="polite"></div>
+      <div id="viewasmodal" class="viewasmodal" style="display: none">
+        <div class="viewasmodalheader">
+          <button id="closeviewasbtn" class="buttonlink">← Back</button>
+          <div id="viewasmodalstatus" class="status" aria-live="polite"></div>
         </div>
-        <div id="viewAsModalContent" class="view-as-modal-content"></div>
+        <div id="viewasmodalcontent" class="viewasmodalcontent"></div>
       </div>
 
-      <div id="adminPanel" class="admin-panel" style="display: none">
-        <div class="admin-head">
+      <div id="adminpanel" class="adminpanel" style="display: none">
+        <div class="adminhead">
           <div>
             <h2>Admin dashboard</h2>
-            <p id="adminRetentionNote" class="admin-retention-note"></p>
+            <p id="adminretentionnote" class="adminretentionnote"></p>
           </div>
-          <div class="admin-actions">
-            <button id="refreshAdminBtn" class="button-link joined">Refresh</button>
+          <div class="adminactions">
+            <button id="refreshadminbtn" class="buttonlink joined">Refresh</button>
           </div>
         </div>
 
-        <div id="adminStatus" class="status" aria-live="polite"></div>
+        <div id="adminstatus" class="status" aria-live="polite"></div>
 
-        <div class="admin-grid">
-          <div class="admin-card">
+        <div class="admingrid">
+          <div class="admincard">
             <p class="muted">Auth success rate</p>
-            <p id="adminAuthRate" class="admin-value">—</p>
-            <p id="adminAuthMeta" class="audit-meta"></p>
+            <p id="adminauthrate" class="adminvalue">—</p>
+            <p id="adminauthmeta" class="auditmeta"></p>
           </div>
-          <div class="admin-card">
+          <div class="admincard">
             <p class="muted">Join success rate</p>
-            <p id="adminJoinRate" class="admin-value">—</p>
-            <p id="adminJoinMeta" class="audit-meta"></p>
+            <p id="adminjoinrate" class="adminvalue">—</p>
+            <p id="adminjoinmeta" class="auditmeta"></p>
           </div>
-          <div class="admin-card">
+          <div class="admincard">
             <p class="muted">Total errors</p>
-            <p id="adminErrorCount" class="admin-value">—</p>
-            <p id="adminRateLimitMeta" class="audit-meta"></p>
-            <p id="adminRsvpRateLimitMeta" class="audit-meta"></p>
+            <p id="adminerrorcount" class="adminvalue">—</p>
+            <p id="adminratelimitmeta" class="auditmeta"></p>
+            <p id="adminrsvpratelimitmeta" class="auditmeta"></p>
           </div>
         </div>
 
-        <div class="admin-grid admin-grid-detail">
-          <div class="admin-card">
-            <div class="audit-header">
+        <div class="admingrid admingriddetail">
+          <div class="admincard">
+            <div class="auditheader">
               <div>
                 <p class="muted">
                   Recent events
-                  <span id="adminAuditMeta"></span>
+                  <span id="adminauditmeta"></span>
                 </p>
               </div>
-              <button id="clearAuditBtn" class="button-link">Clear all</button>
+              <button id="clearauditbtn" class="buttonlink">Clear all</button>
             </div>
-            <div id="adminAuditList" class="audit-list"></div>
-            <div id="auditPagination" class="pagination"></div>
+            <div id="adminauditlist" class="auditlist"></div>
+            <div id="auditpagination" class="pagination"></div>
           </div>
-          <div class="admin-card">
-            <div class="audit-header">
+          <div class="admincard">
+            <div class="auditheader">
               <p class="muted">Errors by code</p>
-              <button id="clearErrorsBtn" class="button-link">Clear all</button>
+              <button id="clearerrorsbtn" class="buttonlink">Clear all</button>
             </div>
-            <div id="adminErrorCodes" class="error-code-list"></div>
+            <div id="adminerrorcodes" class="errorcodelist"></div>
           </div>
         </div>
 
-        <div class="admin-test-section">
+        <div class="admintestsection">
           <p class="muted">Testing tools</p>
 
-          <div class="admin-test-grid">
-            <div class="admin-card">
+          <div class="admintestgrid">
+            <div class="admincard">
               <p class="muted">View as user</p>
-              <p class="admin-test-desc">
+              <p class="admintestdesc">
                 Look at the dashboard exactly like a user would see it.
               </p>
-              <div class="admin-test-row">
+              <div class="admintestrow">
                 <input
-                  id="viewAsSlackIdInput"
+                  id="viewasslackidinput"
                   type="text"
                   placeholder="Slack user ID (e.g. U0828RTU7FE)"
-                  class="admin-input"
+                  class="admininput"
                   autocomplete="off"
                   spellcheck="false"
                 />
-                <button id="viewAsBtn" class="button-link joined">View as</button>
+                <button id="viewasbtn" class="buttonlink joined">View as</button>
               </div>
-              <div id="viewAsResult" class="admin-test-result"></div>
+              <div id="viewasresult" class="admintestresult"></div>
             </div>
 
-            <div class="admin-card">
+            <div class="admincard">
               <p class="muted">Look up user</p>
-              <p class="admin-test-desc">
+              <p class="admintestdesc">
                 Check Slack profile + memberships for any user ID.
               </p>
-              <div class="admin-test-row">
+              <div class="admintestrow">
                 <input
-                  id="lookupSlackIdInput"
+                  id="lookupslackidinput"
                   type="text"
                   placeholder="Slack user ID (e.g. U0828RTU7FE)"
-                  class="admin-input"
+                  class="admininput"
                   autocomplete="off"
                   spellcheck="false"
                 />
-                <button id="lookupBtn" class="button-link joined">Look up</button>
+                <button id="lookupbtn" class="buttonlink joined">Look up</button>
               </div>
-              <div id="lookupResult" class="admin-test-result"></div>
+              <div id="lookupresult" class="admintestresult"></div>
             </div>
 
-            <div class="admin-card">
+            <div class="admincard">
               <p class="muted">Force join channel</p>
-              <p class="admin-test-desc">
+              <p class="admintestdesc">
                 Invite users to selected channels for testing the join flow.
               </p>
-              <div class="admin-test-row">
+              <div class="admintestrow">
                 <input
-                  id="testJoinSlackIdInput"
+                  id="testjoinslackidinput"
                   type="text"
                   placeholder="Slack user ID"
-                  class="admin-input"
+                  class="admininput"
                   autocomplete="off"
                   spellcheck="false"
                 />
-                <select id="testJoinChannelSelect" class="admin-input admin-select" multiple size="5"></select>
-                <p class="admin-select-hint">Hold Ctrl/Cmd to select multiple channels.</p>
-                <div class="admin-select-actions">
-                  <button id="selectAllChannelsBtn" class="button-link joined" type="button">Select all</button>
-                  <button id="clearChannelsBtn" class="button-link joined" type="button">Clear</button>
+                <select id="testjoinchannelselect" class="admininput adminselect" multiple size="5"></select>
+                <p class="adminselecthint">Hold Ctrl/Cmd to select multiple channels.</p>
+                <div class="adminselectactions">
+                  <button id="selectallchannelsbtn" class="buttonlink joined" type="button">Select all</button>
+                  <button id="clearchannelsbtn" class="buttonlink joined" type="button">Clear</button>
                 </div>
-                <button id="testJoinBtn" class="button-link joined">Join</button>
+                <button id="testjoinbtn" class="buttonlink joined">Join</button>
               </div>
-              <div id="testJoinResult" class="admin-test-result"></div>
+              <div id="testjoinresult" class="admintestresult"></div>
             </div>
           </div>
         </div>
